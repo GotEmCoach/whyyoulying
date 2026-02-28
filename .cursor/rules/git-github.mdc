@@ -1,0 +1,9 @@
+---
+description: Senior Rust engineer Git/GitHub — commit/pull often
+alwaysApply: true
+---
+- Commit often: small atomic commits. One logical change per commit.
+- Pull before push: git pull --rebase before git push.
+- Commit messages: imperative, <72 chars.
+- Branch: feature branches for non-trivial work; main deployable.
+- Pre-push: cargo check / cargo test before push.

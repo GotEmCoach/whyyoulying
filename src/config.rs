@@ -126,4 +126,33 @@ mod tests {
         assert_eq!(c.min_confidence, 80);
         assert_eq!(c.filter_agency.as_deref(), Some("DoD"));
     }
+
+    #[test]
+    fn apply_cli_overrides_cage_code() {
+        let mut c = Config::default();
+        c.apply_cli_overrides(None, None, None, None, Some("1ABC2".into()));
+        assert_eq!(c.filter_cage_code.as_deref(), Some("1ABC2"));
+    }
+
+    #[test]
+    fn load_from_path_missing_file() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let p = tmp.path().join("nonexistent.json");
+        assert!(Config::load_from_path(&p).is_err());
+    }
+
+    #[test]
+    fn load_from_path_invalid_json() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        write!(tmp.as_file(), "not json").unwrap();
+        assert!(Config::load_from_path(tmp.path()).is_err());
+    }
+
+    #[test]
+    fn load_from_path_uses_default_min_confidence() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        write!(tmp.as_file(), r#"{{"labor_variance_threshold_pct":10}}"#).unwrap();
+        let c = Config::load_from_path(tmp.path()).unwrap();
+        assert_eq!(c.min_confidence, 50);
+    }
 }

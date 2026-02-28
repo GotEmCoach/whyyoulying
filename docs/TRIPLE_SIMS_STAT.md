@@ -10,12 +10,12 @@
 
 | Phase | Count | Description |
 |-------|-------|-------------|
-| cargo test (unit) | 27 | config(6), types(5), data(6), detect(6), export(4) |
-| cargo test (integration) | 4 | run fixtures, min-confidence, ingest, missing-data-path |
+| cargo test (unit) | 50 | config(10), types(9), data(12), detect(11), export(8) |
+| cargo test (integration) | 10 | run, agency, csv, export-referral, export-fbi, empty, --test |
 | --test f49 | 4 | Config, LaborDetector, Alert serialization |
 | --test f50 | 2 | Ingest + LaborDetector + GhostDetector with TempDir |
 | --test f51 | 1 | E2E binary run |
-| — | **38** | |
+| — | **61** | |
 
 ---
 

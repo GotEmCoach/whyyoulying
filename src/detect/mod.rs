@@ -118,4 +118,137 @@ mod tests {
         assert!(!alerts.is_empty());
         assert!(alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("GhostBilledNotPerformed")));
     }
+
+    #[test]
+    fn labor_detector_qual_ok_no_alert() {
+        let mut ds = Dataset::default();
+        ds.contracts.push(Contract {
+            id: "C1".into(),
+            labor_cats: [("Junior".to_string(), "Assoc".to_string())].into_iter().collect(),
+            ..Default::default()
+        });
+        ds.employees.push(Employee {
+            id: "E1".into(),
+            labor_cat_min: Some("Senior".into()),
+            ..Default::default()
+        });
+        ds.labor_charges.push(LaborCharge {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            labor_cat: "Junior".into(),
+            hours: 40.0,
+            rate: None,
+            ..Default::default()
+        });
+        let det = LaborDetector::new(15.0);
+        let alerts = det.run(&ds);
+        assert!(alerts.is_empty());
+    }
+
+    #[test]
+    fn labor_detector_both_unknown_category_no_qual_alert() {
+        let mut ds = Dataset::default();
+        ds.contracts.push(Contract {
+            id: "C1".into(),
+            labor_cats: [("CustomCat".to_string(), "X".to_string())].into_iter().collect(),
+            ..Default::default()
+        });
+        ds.employees.push(Employee {
+            id: "E1".into(),
+            labor_cat_min: Some("OtherCustom".into()),
+            ..Default::default()
+        });
+        ds.labor_charges.push(LaborCharge {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            labor_cat: "CustomCat".into(),
+            hours: 40.0,
+            rate: None,
+            ..Default::default()
+        });
+        let det = LaborDetector::new(15.0);
+        let alerts = det.run(&ds);
+        assert!(!alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("LaborQualBelow")));
+    }
+
+    #[test]
+    fn ghost_detector_not_verified() {
+        let mut ds = Dataset::default();
+        ds.contracts.push(contract("C1", None, None));
+        ds.employees.push(Employee {
+            id: "E1".into(),
+            verified: false,
+            ..Default::default()
+        });
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 10.0,
+            billed_cat: "Junior".into(),
+            period: None,
+            ..Default::default()
+        });
+        let det = GhostDetector::new();
+        let alerts = det.run(&ds);
+        assert!(alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("GhostNotVerified")));
+    }
+
+    #[test]
+    fn ghost_detector_partial_performed() {
+        let mut ds = Dataset::default();
+        ds.employees.push(Employee {
+            id: "E1".into(),
+            verified: true,
+            ..Default::default()
+        });
+        ds.labor_charges.push(LaborCharge {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            labor_cat: "Senior".into(),
+            hours: 20.0,
+            rate: None,
+            ..Default::default()
+        });
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 40.0,
+            billed_cat: "Senior".into(),
+            period: None,
+            ..Default::default()
+        });
+        let det = GhostDetector::new();
+        let alerts = det.run(&ds);
+        assert!(alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("GhostBilledNotPerformed")));
+    }
+
+    #[test]
+    fn ghost_detector_verified_no_alert() {
+        let mut ds = Dataset::default();
+        ds.employees.push(Employee {
+            id: "E1".into(),
+            verified: true,
+            ..Default::default()
+        });
+        ds.labor_charges.push(LaborCharge {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            labor_cat: "Senior".into(),
+            hours: 40.0,
+            rate: None,
+            ..Default::default()
+        });
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 40.0,
+            billed_cat: "Senior".into(),
+            period: None,
+            ..Default::default()
+        });
+        let det = GhostDetector::new();
+        let alerts = det.run(&ds);
+        assert!(!alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("GhostNotVerified")));
+        assert!(!alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("GhostBilledNotPerformed")));
+    }
 }

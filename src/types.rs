@@ -175,4 +175,56 @@ mod tests {
         assert!(e.quals.is_empty());
         assert!(!e.verified);
     }
+
+    #[test]
+    fn labor_charge_default() {
+        let lc = LaborCharge::default();
+        assert!(lc.contract_id.is_empty());
+        assert_eq!(lc.hours, 0.0);
+    }
+
+    #[test]
+    fn billing_record_default() {
+        let br = BillingRecord::default();
+        assert!(br.employee_id.is_empty());
+        assert_eq!(br.billed_hours, 0.0);
+    }
+
+    #[test]
+    fn fraud_type_ghost_serialize() {
+        let a = Alert {
+            fraud_type: FraudType::GhostBilling,
+            rule_id: RuleId::GhostNoEmployee,
+            severity: 8,
+            confidence: 95,
+            summary: "x".into(),
+            contract_id: None,
+            employee_id: None,
+            cage_code: None,
+            agency: None,
+            predicate_acts: None,
+            timestamp: None,
+        };
+        let j = serde_json::to_string(&a).unwrap();
+        assert!(j.contains("ghost_billing"));
+    }
+
+    #[test]
+    fn predicate_act_serialize() {
+        let a = Alert {
+            fraud_type: FraudType::LaborCategory,
+            rule_id: RuleId::LaborVariance,
+            severity: 5,
+            confidence: 85,
+            summary: "x".into(),
+            contract_id: None,
+            employee_id: None,
+            cage_code: None,
+            agency: None,
+            predicate_acts: Some(vec![PredicateAct::WireFraud]),
+            timestamp: None,
+        };
+        let j = serde_json::to_string(&a).unwrap();
+        assert!(j.contains("wire_fraud"));
+    }
 }

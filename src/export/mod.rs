@@ -176,4 +176,29 @@ mod tests {
         assert!(fbi.factual_basis.is_empty());
         assert!(fbi.predicate_acts_summary.is_empty());
     }
+
+    #[test]
+    fn referral_package_multiple_alerts() {
+        let alerts = vec![sample_alert(), sample_alert()];
+        let pkg = referral_package(&alerts);
+        assert_eq!(pkg.alert_count, 2);
+        assert_eq!(pkg.audit_entries.len(), 2);
+    }
+
+    #[test]
+    fn referral_package_audit_index_matches() {
+        let alerts = vec![sample_alert()];
+        let pkg = referral_package(&alerts);
+        assert_eq!(pkg.audit_entries[0].alert_index, 0);
+        assert_eq!(pkg.audit_entries[0].rule_id, "LaborQualBelow");
+    }
+
+    #[test]
+    fn referral_package_json_serializable() {
+        let alerts = vec![sample_alert()];
+        let pkg = referral_package(&alerts);
+        let j = serde_json::to_string(&pkg).unwrap();
+        assert!(j.contains("DoD"));
+        assert!(j.contains("chain_of_custody"));
+    }
 }

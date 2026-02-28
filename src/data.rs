@@ -111,7 +111,7 @@ impl Ingest {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::Contract;
+    use crate::types::{Contract, Employee};
     use std::collections::HashMap;
 
     #[test]
@@ -196,5 +196,95 @@ mod tests {
         });
         let ids = ds.nexus_contract_ids(None, Some("1ABC"));
         assert_eq!(ids.len(), 1);
+    }
+
+    #[test]
+    fn nexus_contract_ids_case_insensitive() {
+        let mut ds = Dataset::default();
+        ds.contracts.push(Contract {
+            id: "C1".into(),
+            cage_code: None,
+            agency: Some("DoD".into()),
+            labor_cats: HashMap::new(),
+        });
+        let ids = ds.nexus_contract_ids(Some("dod"), None);
+        assert_eq!(ids.len(), 1);
+    }
+
+    #[test]
+    fn nexus_contract_ids_both_filters() {
+        let mut ds = Dataset::default();
+        ds.contracts.push(Contract {
+            id: "C1".into(),
+            cage_code: Some("1X".into()),
+            agency: Some("DoD".into()),
+            labor_cats: HashMap::new(),
+        });
+        ds.contracts.push(Contract {
+            id: "C2".into(),
+            cage_code: Some("2Y".into()),
+            agency: Some("DoD".into()),
+            labor_cats: HashMap::new(),
+        });
+        let ids = ds.nexus_contract_ids(Some("DoD"), Some("1X"));
+        assert_eq!(ids.len(), 1);
+        assert!(ids.contains("C1"));
+    }
+
+    #[test]
+    fn nexus_contract_ids_empty_ds() {
+        let ds = Dataset::default();
+        let ids = ds.nexus_contract_ids(None, None);
+        assert!(ids.is_empty());
+    }
+
+    #[test]
+    fn employee_by_id() {
+        let mut ds = Dataset::default();
+        ds.employees.push(Employee {
+            id: "E1".into(),
+            quals: vec!["BA".into()],
+            ..Default::default()
+        });
+        assert!(ds.employee_by_id("E1").is_some());
+        assert!(ds.employee_by_id("E2").is_none());
+    }
+
+    #[test]
+    fn employee_ids() {
+        let mut ds = Dataset::default();
+        ds.employees.push(Employee {
+            id: "E1".into(),
+            ..Default::default()
+        });
+        ds.employees.push(Employee {
+            id: "E2".into(),
+            ..Default::default()
+        });
+        let ids = ds.employee_ids();
+        assert_eq!(ids.len(), 2);
+        assert!(ids.contains("E1"));
+        assert!(ids.contains("E2"));
+    }
+
+    #[test]
+    fn load_from_path_all_files() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::write(tmp.path().join("contracts.json"), r#"[{"id":"C1","labor_cats":{}}]"#).unwrap();
+        std::fs::write(tmp.path().join("employees.json"), r#"[{"id":"E1","quals":[],"verified":false}]"#).unwrap();
+        std::fs::write(tmp.path().join("labor_charges.json"), r#"[{"contract_id":"C1","employee_id":"E1","labor_cat":"X","hours":1.0}]"#).unwrap();
+        std::fs::write(tmp.path().join("billing_records.json"), r#"[{"contract_id":"C1","employee_id":"E1","billed_hours":1.0,"billed_cat":"X"}]"#).unwrap();
+        let ds = Ingest::load_from_path(tmp.path()).unwrap();
+        assert_eq!(ds.contracts.len(), 1);
+        assert_eq!(ds.employees.len(), 1);
+        assert_eq!(ds.labor_charges.len(), 1);
+        assert_eq!(ds.billing_records.len(), 1);
+    }
+
+    #[test]
+    fn load_from_path_invalid_json_fails() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::write(tmp.path().join("contracts.json"), "not json").unwrap();
+        assert!(Ingest::load_from_path(tmp.path()).is_err());
     }
 }

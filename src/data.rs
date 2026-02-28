@@ -3,29 +3,29 @@
 use crate::config::Config;
 use crate::types::{BillingRecord, Contract, Employee, LaborCharge};
 use anyhow::{Context, Result};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 /// Normalized dataset for detection pipeline.
 #[derive(Debug, Clone, Default)]
 pub struct Dataset {
-    pub contracts: Vec<Contract>,
-    pub employees: Vec<Employee>,
+    pub contracts: HashMap<String, Contract>,
+    pub employees: HashMap<String, Employee>,
     pub labor_charges: Vec<LaborCharge>,
     pub billing_records: Vec<BillingRecord>,
 }
 
 impl Dataset {
     pub fn contract_by_id(&self, id: &str) -> Option<&Contract> {
-        self.contracts.iter().find(|c| c.id == id)
+        self.contracts.get(id)
     }
 
     pub fn employee_by_id(&self, id: &str) -> Option<&Employee> {
-        self.employees.iter().find(|e| e.id == id)
+        self.employees.get(id)
     }
 
     pub fn employee_ids(&self) -> HashSet<&str> {
-        self.employees.iter().map(|e| e.id.as_str()).collect()
+        self.employees.keys().map(|s| s.as_str()).collect()
     }
 
     /// DoD nexus filter (D5): contract IDs matching agency and/or CAGE.
@@ -33,18 +33,18 @@ impl Dataset {
         &self,
         filter_agency: Option<&str>,
         filter_cage_code: Option<&str>,
-    ) -> std::collections::HashSet<&str> {
+    ) -> HashSet<&str> {
         if filter_agency.is_none() && filter_cage_code.is_none() {
-            return self.contracts.iter().map(|c| c.id.as_str()).collect();
+            return self.contracts.keys().map(|s| s.as_str()).collect();
         }
         self.contracts
-            .iter()
+            .values()
             .filter(|c| {
                 let agency_ok = filter_agency
-                    .map(|a| c.agency.as_deref().map_or(false, |x| x.eq_ignore_ascii_case(a)))
+                    .map(|a| c.agency.as_deref().is_some_and(|x| x.eq_ignore_ascii_case(a)))
                     .unwrap_or(true);
                 let cage_ok = filter_cage_code
-                    .map(|g| c.cage_code.as_deref().map_or(false, |x| x.eq_ignore_ascii_case(g)))
+                    .map(|g| c.cage_code.as_deref().is_some_and(|x| x.eq_ignore_ascii_case(g)))
                     .unwrap_or(true);
                 agency_ok && cage_ok
             })
@@ -74,7 +74,7 @@ impl Ingest {
                 .with_context(|| format!("read {}", contracts_path.display()))?;
             let raw: Vec<Contract> = serde_json::from_str(&s)
                 .with_context(|| format!("parse {}", contracts_path.display()))?;
-            ds.contracts = raw;
+            ds.contracts = raw.into_iter().map(|c| (c.id.clone(), c)).collect();
         }
 
         let employees_path = path.join("employees.json");
@@ -83,7 +83,7 @@ impl Ingest {
                 .with_context(|| format!("read {}", employees_path.display()))?;
             let raw: Vec<Employee> = serde_json::from_str(&s)
                 .with_context(|| format!("parse {}", employees_path.display()))?;
-            ds.employees = raw;
+            ds.employees = raw.into_iter().map(|e| (e.id.clone(), e)).collect();
         }
 
         let labor_path = path.join("labor_charges.json");
@@ -134,19 +134,22 @@ mod tests {
         .unwrap();
         let ds = Ingest::load_from_path(tmp.path()).unwrap();
         assert_eq!(ds.contracts.len(), 1);
-        assert_eq!(ds.contracts[0].id, "C1");
+        assert_eq!(ds.contract_by_id("C1").unwrap().id, "C1");
         assert!(ds.employees.is_empty());
     }
 
     #[test]
     fn contract_by_id() {
         let mut ds = Dataset::default();
-        ds.contracts.push(Contract {
-            id: "C1".into(),
-            cage_code: Some("1X".into()),
-            agency: Some("DoD".into()),
-            labor_cats: HashMap::new(),
-        });
+        ds.contracts.insert(
+            "C1".into(),
+            Contract {
+                id: "C1".into(),
+                cage_code: Some("1X".into()),
+                agency: Some("DoD".into()),
+                labor_cats: HashMap::new(),
+            },
+        );
         assert!(ds.contract_by_id("C1").is_some());
         assert!(ds.contract_by_id("C2").is_none());
     }
@@ -154,12 +157,15 @@ mod tests {
     #[test]
     fn nexus_contract_ids_no_filter_returns_all() {
         let mut ds = Dataset::default();
-        ds.contracts.push(Contract {
-            id: "C1".into(),
-            cage_code: None,
-            agency: None,
-            labor_cats: HashMap::new(),
-        });
+        ds.contracts.insert(
+            "C1".into(),
+            Contract {
+                id: "C1".into(),
+                cage_code: None,
+                agency: None,
+                labor_cats: HashMap::new(),
+            },
+        );
         let ids = ds.nexus_contract_ids(None, None);
         assert_eq!(ids.len(), 1);
         assert!(ids.contains("C1"));
@@ -168,18 +174,24 @@ mod tests {
     #[test]
     fn nexus_contract_ids_filter_agency() {
         let mut ds = Dataset::default();
-        ds.contracts.push(Contract {
-            id: "C1".into(),
-            cage_code: None,
-            agency: Some("DoD".into()),
-            labor_cats: HashMap::new(),
-        });
-        ds.contracts.push(Contract {
-            id: "C2".into(),
-            cage_code: None,
-            agency: Some("GSA".into()),
-            labor_cats: HashMap::new(),
-        });
+        ds.contracts.insert(
+            "C1".into(),
+            Contract {
+                id: "C1".into(),
+                cage_code: None,
+                agency: Some("DoD".into()),
+                labor_cats: HashMap::new(),
+            },
+        );
+        ds.contracts.insert(
+            "C2".into(),
+            Contract {
+                id: "C2".into(),
+                cage_code: None,
+                agency: Some("GSA".into()),
+                labor_cats: HashMap::new(),
+            },
+        );
         let ids = ds.nexus_contract_ids(Some("DoD"), None);
         assert_eq!(ids.len(), 1);
         assert!(ids.contains("C1"));
@@ -188,12 +200,15 @@ mod tests {
     #[test]
     fn nexus_contract_ids_filter_cage() {
         let mut ds = Dataset::default();
-        ds.contracts.push(Contract {
-            id: "C1".into(),
-            cage_code: Some("1ABC".into()),
-            agency: None,
-            labor_cats: HashMap::new(),
-        });
+        ds.contracts.insert(
+            "C1".into(),
+            Contract {
+                id: "C1".into(),
+                cage_code: Some("1ABC".into()),
+                agency: None,
+                labor_cats: HashMap::new(),
+            },
+        );
         let ids = ds.nexus_contract_ids(None, Some("1ABC"));
         assert_eq!(ids.len(), 1);
     }
@@ -201,12 +216,15 @@ mod tests {
     #[test]
     fn nexus_contract_ids_case_insensitive() {
         let mut ds = Dataset::default();
-        ds.contracts.push(Contract {
-            id: "C1".into(),
-            cage_code: None,
-            agency: Some("DoD".into()),
-            labor_cats: HashMap::new(),
-        });
+        ds.contracts.insert(
+            "C1".into(),
+            Contract {
+                id: "C1".into(),
+                cage_code: None,
+                agency: Some("DoD".into()),
+                labor_cats: HashMap::new(),
+            },
+        );
         let ids = ds.nexus_contract_ids(Some("dod"), None);
         assert_eq!(ids.len(), 1);
     }
@@ -214,18 +232,24 @@ mod tests {
     #[test]
     fn nexus_contract_ids_both_filters() {
         let mut ds = Dataset::default();
-        ds.contracts.push(Contract {
-            id: "C1".into(),
-            cage_code: Some("1X".into()),
-            agency: Some("DoD".into()),
-            labor_cats: HashMap::new(),
-        });
-        ds.contracts.push(Contract {
-            id: "C2".into(),
-            cage_code: Some("2Y".into()),
-            agency: Some("DoD".into()),
-            labor_cats: HashMap::new(),
-        });
+        ds.contracts.insert(
+            "C1".into(),
+            Contract {
+                id: "C1".into(),
+                cage_code: Some("1X".into()),
+                agency: Some("DoD".into()),
+                labor_cats: HashMap::new(),
+            },
+        );
+        ds.contracts.insert(
+            "C2".into(),
+            Contract {
+                id: "C2".into(),
+                cage_code: Some("2Y".into()),
+                agency: Some("DoD".into()),
+                labor_cats: HashMap::new(),
+            },
+        );
         let ids = ds.nexus_contract_ids(Some("DoD"), Some("1X"));
         assert_eq!(ids.len(), 1);
         assert!(ids.contains("C1"));
@@ -241,11 +265,14 @@ mod tests {
     #[test]
     fn employee_by_id() {
         let mut ds = Dataset::default();
-        ds.employees.push(Employee {
-            id: "E1".into(),
-            quals: vec!["BA".into()],
-            ..Default::default()
-        });
+        ds.employees.insert(
+            "E1".into(),
+            Employee {
+                id: "E1".into(),
+                quals: vec!["BA".into()],
+                ..Default::default()
+            },
+        );
         assert!(ds.employee_by_id("E1").is_some());
         assert!(ds.employee_by_id("E2").is_none());
     }
@@ -253,14 +280,20 @@ mod tests {
     #[test]
     fn employee_ids() {
         let mut ds = Dataset::default();
-        ds.employees.push(Employee {
-            id: "E1".into(),
-            ..Default::default()
-        });
-        ds.employees.push(Employee {
-            id: "E2".into(),
-            ..Default::default()
-        });
+        ds.employees.insert(
+            "E1".into(),
+            Employee {
+                id: "E1".into(),
+                ..Default::default()
+            },
+        );
+        ds.employees.insert(
+            "E2".into(),
+            Employee {
+                id: "E2".into(),
+                ..Default::default()
+            },
+        );
         let ids = ds.employee_ids();
         assert_eq!(ids.len(), 2);
         assert!(ids.contains("E1"));

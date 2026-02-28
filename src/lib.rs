@@ -3,6 +3,8 @@
 //! Supports DoD IG and FBI fraud investigator workflows per DoDI 5505.02/03
 //! and Attorney General Guidelines.
 
+#[cfg(feature = "tests")]
+pub mod tests;
 pub mod config;
 pub mod data;
 pub mod detect;

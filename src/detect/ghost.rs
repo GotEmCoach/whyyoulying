@@ -9,11 +9,18 @@ use std::collections::HashSet;
 
 pub struct GhostDetector;
 
+impl Default for GhostDetector {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl GhostDetector {
     pub fn new() -> Self {
         Self
     }
 
+    #[must_use]
     pub fn run(&self, ds: &Dataset) -> Vec<Alert> {
         let mut alerts = Vec::new();
         let employee_ids: HashSet<&str> = ds.employee_ids();
@@ -105,6 +112,7 @@ impl GhostDetector {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn alert(
     rule_id: RuleId,
     confidence: u8,

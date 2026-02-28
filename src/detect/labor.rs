@@ -25,6 +25,7 @@ impl LaborDetector {
         Self { threshold_pct }
     }
 
+    #[must_use]
     pub fn run(&self, ds: &Dataset) -> Vec<Alert> {
         let mut alerts = Vec::new();
 
@@ -76,6 +77,7 @@ impl LaborDetector {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn alert(
     rule_id: RuleId,
     confidence: u8,

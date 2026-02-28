@@ -15,10 +15,10 @@ struct Cli {
     #[arg(long, global = true)]
     data_path: Option<PathBuf>,
 
-    #[arg(long, global = true)]
+    #[arg(long, global = true, value_parser = clap::value_parser!(f64))]
     threshold: Option<f64>,
 
-    #[arg(long, global = true, help = "Min confidence 0-100 (S4 false-positive control)")]
+    #[arg(long, global = true, value_parser = clap::value_parser!(u8).range(0..=100), help = "Min confidence 0-100 (S4 false-positive control)")]
     min_confidence: Option<u8>,
 
     #[arg(long, global = true, help = "DoD nexus: filter by agency (e.g. DoD, Army)")]
@@ -32,9 +32,6 @@ struct Cli {
 
     #[command(subcommand)]
     command: Option<Commands>,
-
-    #[arg(long)]
-    test: bool,
 }
 
 #[derive(Clone, Copy, clap::ValueEnum)]
@@ -60,10 +57,6 @@ enum Commands {
 
 fn main() {
     let cli = Cli::parse();
-
-    if cli.test {
-        std::process::exit(run_tests());
-    }
 
     let result = match &cli.command {
         None | Some(Commands::Run) => run(&cli),
@@ -92,7 +85,7 @@ fn load_config(cli: &Cli) -> Result<Config> {
         cli.min_confidence,
         cli.agency.clone(),
         cli.cage_code.clone(),
-    );
+    )?;
     Ok(cfg)
 }
 
@@ -120,7 +113,7 @@ fn run(cli: &Cli) -> Result<i32> {
     let ghost_alerts = ghost.run(&ds);
     let mut alerts: Vec<Alert> = labor_alerts
         .into_iter()
-        .chain(ghost_alerts.into_iter())
+        .chain(ghost_alerts)
         .collect();
 
     let nexus_ids = ds.nexus_contract_ids(
@@ -131,7 +124,7 @@ fn run(cli: &Cli) -> Result<i32> {
         a.confidence >= config.min_confidence
             && a.contract_id
                 .as_ref()
-                .map_or(true, |id| nexus_ids.contains(id.as_str()))
+                .is_none_or(|id| nexus_ids.contains(id.as_str()))
     });
 
     match cli.output {
@@ -143,7 +136,7 @@ fn run(cli: &Cli) -> Result<i32> {
             println!("fraud_type,rule_id,severity,confidence,summary,contract_id,employee_id,cage_code,agency,timestamp");
             for a in &alerts {
                 println!(
-                    "{:?},{:?},{},{},{},{},{},{},{},{}",
+                    "{},{},{},{},{},{},{},{},{},{}",
                     a.fraud_type,
                     a.rule_id,
                     a.severity,
@@ -192,7 +185,7 @@ fn cmd_export_referral(cli: &Cli, path: Option<&std::path::Path>, fbi_format: bo
     let mut alerts: Vec<Alert> = labor
         .run(&ds)
         .into_iter()
-        .chain(ghost.run(&ds).into_iter())
+        .chain(ghost.run(&ds))
         .collect();
 
     let nexus_ids = ds.nexus_contract_ids(
@@ -203,7 +196,7 @@ fn cmd_export_referral(cli: &Cli, path: Option<&std::path::Path>, fbi_format: bo
         a.confidence >= config.min_confidence
             && a.contract_id
                 .as_ref()
-                .map_or(true, |id| nexus_ids.contains(id.as_str()))
+                .is_none_or(|id| nexus_ids.contains(id.as_str()))
     });
 
     let out = if fbi_format {
@@ -227,137 +220,4 @@ fn escape_csv(s: &str) -> String {
     } else {
         s.to_string()
     }
-}
-
-fn run_tests() -> i32 {
-    let mut failed = 0;
-
-    let f49_pass = run_f49();
-    let f50_pass = run_f50();
-    let f51_pass = run_f51();
-
-    let green = "\x1b[32m";
-    let red = "\x1b[31m";
-    let reset = "\x1b[0m";
-
-    print!("f49 unit: ");
-    if f49_pass {
-        println!("{green}PASS{reset}");
-    } else {
-        println!("{red}FAIL{reset}");
-        failed += 1;
-    }
-    print!("f50 integration: ");
-    if f50_pass {
-        println!("{green}PASS{reset}");
-    } else {
-        println!("{red}FAIL{reset}");
-        failed += 1;
-    }
-    print!("f51 e2e: ");
-    if f51_pass {
-        println!("{green}PASS{reset}");
-    } else {
-        println!("{red}FAIL{reset}");
-        failed += 1;
-    }
-
-    if failed > 0 {
-        eprintln!("\n{failed} test(s) failed");
-        1
-    } else {
-        eprintln!("\nall tests passed");
-        0
-    }
-}
-
-fn run_f49() -> bool {
-    use whyyoulying::{Alert, Config, FraudType, LaborDetector, RuleId};
-
-    let cfg = Config::default();
-    assert!(cfg.labor_variance_threshold_pct > 0.0);
-
-    let labor = LaborDetector::new(15.0);
-    let ds = whyyoulying::Dataset::default();
-    let alerts = labor.run(&ds);
-    assert!(alerts.is_empty());
-
-    let alert = Alert {
-        fraud_type: FraudType::LaborCategory,
-        rule_id: RuleId::LaborVariance,
-        severity: 5,
-        confidence: 85,
-        summary: "test".to_string(),
-        contract_id: Some("C1".to_string()),
-        employee_id: Some("E1".to_string()),
-        cage_code: None,
-        agency: None,
-        predicate_acts: None,
-        timestamp: Some("2026-01-01T00:00:00Z".to_string()),
-    };
-    let json = serde_json::to_string(&alert).unwrap();
-    assert!(json.contains("labor_category"));
-    assert!(json.contains("LABOR_VARIANCE"));
-
-    true
-}
-
-fn run_f50() -> bool {
-    use tempfile::TempDir;
-
-    let tmp = TempDir::new().unwrap();
-    let p = tmp.path();
-
-    let contracts = serde_json::json!([{"id":"C1","cage_code":null,"agency":null,"labor_cats":{"Senior":"BA"}}]);
-    std::fs::write(p.join("contracts.json"), contracts.to_string()).unwrap();
-
-    let employees = serde_json::json!([{"id":"E1","quals":["BA"],"labor_cat_min":"Junior","verified":false}]);
-    std::fs::write(p.join("employees.json"), employees.to_string()).unwrap();
-
-    let labor = serde_json::json!([{"contract_id":"C1","employee_id":"E1","labor_cat":"Principal","hours":40.0,"rate":150.0}]);
-    std::fs::write(p.join("labor_charges.json"), labor.to_string()).unwrap();
-
-    let billing = serde_json::json!([{"contract_id":"C1","employee_id":"E99","billed_hours":10.0,"billed_cat":"Junior","period":"2026-01"}]);
-    std::fs::write(p.join("billing_records.json"), billing.to_string()).unwrap();
-
-    let ds = whyyoulying::Ingest::load_from_path(p).unwrap();
-    assert_eq!(ds.contracts.len(), 1);
-    assert_eq!(ds.employees.len(), 1);
-    assert_eq!(ds.labor_charges.len(), 1);
-    assert_eq!(ds.billing_records.len(), 1);
-
-    let labor_det = whyyoulying::LaborDetector::new(15.0);
-    let ghost_det = whyyoulying::GhostDetector::new();
-    let labor_alerts = labor_det.run(&ds);
-    let ghost_alerts = ghost_det.run(&ds);
-    assert!(!labor_alerts.is_empty());
-    assert!(labor_alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("LaborQualBelow")));
-    assert!(!ghost_alerts.is_empty());
-    assert!(ghost_alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("GhostNoEmployee")));
-
-    true
-}
-
-fn run_f51() -> bool {
-    use std::path::PathBuf;
-    use std::process::Command;
-
-    let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fixtures");
-    assert!(fixtures.exists(), "f51: fixtures dir required");
-    let out = Command::new(std::env::current_exe().unwrap())
-        .arg("--data-path")
-        .arg(&fixtures)
-        .output()
-        .unwrap();
-    assert!(out.status.success() || out.status.code() == Some(1));
-    let stdout = String::from_utf8(out.stdout).unwrap();
-    let stderr = String::from_utf8(out.stderr).unwrap();
-    if stdout.is_empty() && !out.status.success() {
-        eprintln!("f51 stderr: {stderr}");
-    }
-    if !stdout.is_empty() {
-        let parsed: Result<Vec<serde_json::Value>, _> = serde_json::from_str(&stdout);
-        assert!(parsed.is_ok(), "f51: stdout should be valid JSON array");
-    }
-    true
 }

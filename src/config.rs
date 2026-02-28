@@ -3,6 +3,13 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum ConfigError {
+    #[error("labor_variance_threshold_pct must be in (0, 100], got {0}")]
+    InvalidThreshold(f64),
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -44,7 +51,7 @@ impl Config {
         let cfg: Self = serde_json::from_str(&s)
             .with_context(|| format!("parse config: {}", path.display()))?;
         if cfg.labor_variance_threshold_pct <= 0.0 || cfg.labor_variance_threshold_pct > 100.0 {
-            anyhow::bail!("labor_variance_threshold_pct must be in (0, 100]");
+            return Err(ConfigError::InvalidThreshold(cfg.labor_variance_threshold_pct).into());
         }
         Ok(cfg)
     }
@@ -56,11 +63,14 @@ impl Config {
         min_confidence: Option<u8>,
         filter_agency: Option<String>,
         filter_cage_code: Option<String>,
-    ) {
+    ) -> Result<(), ConfigError> {
         if let Some(p) = data_path {
             self.data_path = Some(p);
         }
         if let Some(t) = threshold {
+            if t <= 0.0 || t > 100.0 {
+                return Err(ConfigError::InvalidThreshold(t));
+            }
             self.labor_variance_threshold_pct = t;
         }
         if let Some(c) = min_confidence {
@@ -72,6 +82,7 @@ impl Config {
         if filter_cage_code.is_some() {
             self.filter_cage_code = filter_cage_code;
         }
+        Ok(())
     }
 }
 
@@ -120,7 +131,8 @@ mod tests {
     #[test]
     fn apply_cli_overrides() {
         let mut c = Config::default();
-        c.apply_cli_overrides(Some("x".into()), Some(25.0), Some(80), Some("DoD".into()), None);
+        c.apply_cli_overrides(Some("x".into()), Some(25.0), Some(80), Some("DoD".into()), None)
+            .unwrap();
         assert_eq!(c.data_path.as_deref(), Some("x"));
         assert_eq!(c.labor_variance_threshold_pct, 25.0);
         assert_eq!(c.min_confidence, 80);
@@ -130,8 +142,16 @@ mod tests {
     #[test]
     fn apply_cli_overrides_cage_code() {
         let mut c = Config::default();
-        c.apply_cli_overrides(None, None, None, None, Some("1ABC2".into()));
+        c.apply_cli_overrides(None, None, None, None, Some("1ABC2".into()))
+            .unwrap();
         assert_eq!(c.filter_cage_code.as_deref(), Some("1ABC2"));
+    }
+
+    #[test]
+    fn apply_cli_overrides_rejects_invalid_threshold() {
+        let mut c = Config::default();
+        assert!(c.apply_cli_overrides(None, Some(0.0), None, None, None).is_err());
+        assert!(c.apply_cli_overrides(None, Some(101.0), None, None, None).is_err());
     }
 
     #[test]

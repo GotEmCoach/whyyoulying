@@ -6,7 +6,7 @@ nff=never fire-and-forget bleed=bleeding edge 3s=triple sims chg upd !expose !me
 ## Commands (c) — whyyoulying
 R=/home/mcochran/whyyoulying
 @go=cd $R && cargo run
-@t=cargo run -p whyyoulying -- --test
+@t=cargo run --bin whyyoulying-test --features tests
 @test=cargo test -p whyyoulying
 @b=cargo build --release -p whyyoulying
 @check=cargo check -p whyyoulying
@@ -27,13 +27,13 @@ R=/home/mcochran/whyyoulying
 12:!utilize→use !leverage→use/apply !facilitate→let/enable !enhance→improve !optimize→improve/tune !comprehensive→full !holistic→drop !robust→solid !seamlessly→drop !empower→enable !streamline→simplify !synergy→drop !paradigm→model !in order to→to. Voice: short active concrete.
 
 ## P14 test-binary
-14:f49 unit f50 integration f51. --test flag. Same binary. f49:no I/O f50:TempDir DB f51:random port real requests. Colored PASS/FAIL.
+14:Two binaries: whyyoulying-test (full) and whyyoulying (release, stripped). f49–f60 in test binary. f49:no I/O f50:TempDir f51:e2e f52–f60:self-integration. Colored PASS/FAIL.
 
 ## P15 anti-patterns
 15:!self-licking !circular !abstraction. Real tests. !traits unless 2+ impl. !wrapper !builder <5 fields. !assume execute verify.
 
 ## P16 ci-pipeline
-16:Test binary=CI. cargo run -- --test. Stages: compile f49 f50 f51 exit. 0=green 1=red.
+16:Test binary=CI. cargo run --bin whyyoulying-test --features tests. Stages: compile f49 f50 f51 exit. 0=green 1=red. Release=stripped.
 
 ## P17 production-binary
-17:Same binary main+--test. Core. AES Argon2 if crypto. ctrl_c graceful. LTO strip panic=abort.
+17:Release binary=product only. Core. ctrl_c graceful. LTO strip panic=abort.

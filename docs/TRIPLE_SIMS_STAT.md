@@ -12,10 +12,8 @@
 |-------|-------|-------------|
 | cargo test (unit) | 50 | config(10), types(9), data(12), detect(11), export(8) |
 | cargo test (integration) | 10 | run, agency, csv, export-referral, export-fbi, empty, --test |
-| --test f49 | 4 | Config, LaborDetector, Alert serialization |
-| --test f50 | 2 | Ingest + LaborDetector + GhostDetector with TempDir |
-| --test f51 | 1 | E2E binary run |
-| — | **61** | |
+| --test f49–f60 | 12 | Unit, TempDir, e2e, self-integration (run, agency, csv, export, empty) |
+| — | **72** | |
 
 ---
 

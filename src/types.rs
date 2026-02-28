@@ -2,6 +2,7 @@
 //!
 //! Domain model per TRIPLE_SIMS_ARCH.md: Contract, Employee, LaborCharge, BillingRecord.
 
+use std::fmt;
 use serde::{Deserialize, Serialize};
 
 /// Fraud classification per DoD IG scenarios.
@@ -10,6 +11,15 @@ use serde::{Deserialize, Serialize};
 pub enum FraudType {
     LaborCategory,
     GhostBilling,
+}
+
+impl fmt::Display for FraudType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            FraudType::LaborCategory => "labor_category",
+            FraudType::GhostBilling => "ghost_billing",
+        })
+    }
 }
 
 /// Rule ID for audit trail and chain of custody (Sim 4).
@@ -21,6 +31,18 @@ pub enum RuleId {
     GhostNoEmployee,
     GhostNotVerified,
     GhostBilledNotPerformed,
+}
+
+impl fmt::Display for RuleId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            RuleId::LaborVariance => "LABOR_VARIANCE",
+            RuleId::LaborQualBelow => "LABOR_QUAL_BELOW",
+            RuleId::GhostNoEmployee => "GHOST_NO_EMPLOYEE",
+            RuleId::GhostNotVerified => "GHOST_NOT_VERIFIED",
+            RuleId::GhostBilledNotPerformed => "GHOST_BILLED_NOT_PERFORMED",
+        })
+    }
 }
 
 /// Predicate act for FBI case routing (F4).

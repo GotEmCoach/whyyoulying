@@ -10,9 +10,6 @@ use whyyoulying::{Alert, Config, GhostDetector, Ingest, LaborDetector};
 #[command(about = "Proactive Labor Category Fraud and Ghost Billing detection")]
 #[command(version)]
 struct Cli {
-    #[arg(long, global = true, help = "Run f49 f50 f51 test suite")]
-    test: bool,
-
     #[arg(long, global = true)]
     config: Option<PathBuf>,
 
@@ -64,10 +61,6 @@ enum Commands {
 
 fn main() {
     let cli = Cli::parse();
-
-    if cli.test {
-        std::process::exit(whyyoulying::tests::f30());
-    }
 
     let result = match &cli.command {
         None | Some(Commands::Run) => run(&cli),

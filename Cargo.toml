@@ -1,6 +1,6 @@
 [package]
 name = "whyyoulying"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 default-run = "whyyoulying"
 description = "Proactive detection of Labor Category Fraud and Ghost Billing"

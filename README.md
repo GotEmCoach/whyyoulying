@@ -6,6 +6,29 @@ Per DoDI 5505.02/03, DoD OIG Fraud Scenarios, and Attorney General Guidelines.
 
 ---
 
+## Proof of Artifacts
+
+*Wire diagrams and sample output for quick review.*
+
+### Wire / Architecture
+
+```mermaid
+flowchart LR
+    Data[fixtures/] --> Ingest[ingest]
+    Ingest --> Run[run]
+    Run --> Detectors[Labor + Ghost detectors]
+    Detectors --> Alerts[Alerts]
+    Run --> Export[export-referral]
+```
+
+### Screenshots
+
+| View | Description |
+|------|-------------|
+| Terminal | `cargo run -- --data-path fixtures run` — sample output |
+
+---
+
 ## Quick Start
 
 ```bash

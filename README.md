@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/GotEmCoach/whyyoulying/main/assets/logo.svg" alt="whyyoulying" width="64">
+</p>
+
 # whyyoulying
 
 Proactive detection of **Labor Category Fraud** and **Ghost Billing** for DoD IG and FBI fraud investigators.

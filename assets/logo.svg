@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="8" fill="#0a0a0a"/>
+  <path d="M20 44 L32 24 L44 44" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="32" cy="28" r="3" fill="#ef4444"/>
+  <text x="32" y="58" font-family="monospace" font-size="8" fill="#888" text-anchor="middle">fraud</text>
+</svg>

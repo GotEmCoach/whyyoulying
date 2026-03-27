@@ -1,107 +1,91 @@
-//! Data ingestion and normalization.
+//! Data ingestion and normalization. P13 compressed.
 
-use crate::config::Config;
-use crate::types::{BillingRecord, Contract, Employee, LaborCharge};
+use crate::config::t1;
+use crate::types::{t6, t7, t8, t9};
 use anyhow::{Context, Result};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
-/// Normalized dataset for detection pipeline.
+/// t3=Dataset. Normalized dataset for detection pipeline.
 #[derive(Debug, Clone, Default)]
-pub struct Dataset {
-    pub contracts: HashMap<String, Contract>,
-    pub employees: HashMap<String, Employee>,
-    pub labor_charges: Vec<LaborCharge>,
-    pub billing_records: Vec<BillingRecord>,
+pub struct t3 {
+    /// s7=contracts
+    pub s7: HashMap<String, t6>,
+    /// s8=employees
+    pub s8: HashMap<String, t7>,
+    /// s9=labor_charges
+    pub s9: Vec<t8>,
+    /// s10=billing_records
+    pub s10: Vec<t9>,
 }
 
-impl Dataset {
-    pub fn contract_by_id(&self, id: &str) -> Option<&Contract> {
-        self.contracts.get(id)
+impl t3 {
+    /// f6=contract_by_id
+    pub fn f6(&self, id: &str) -> Option<&t6> { self.s7.get(id) }
+
+    /// f7=employee_by_id
+    pub fn f7(&self, id: &str) -> Option<&t7> { self.s8.get(id) }
+
+    /// f8=employee_ids
+    pub fn f8(&self) -> HashSet<&str> {
+        self.s8.keys().map(|s| s.as_str()).collect()
     }
 
-    pub fn employee_by_id(&self, id: &str) -> Option<&Employee> {
-        self.employees.get(id)
-    }
-
-    pub fn employee_ids(&self) -> HashSet<&str> {
-        self.employees.keys().map(|s| s.as_str()).collect()
-    }
-
-    /// DoD nexus filter (D5): contract IDs matching agency and/or CAGE.
-    pub fn nexus_contract_ids(
-        &self,
-        filter_agency: Option<&str>,
-        filter_cage_code: Option<&str>,
-    ) -> HashSet<&str> {
+    /// f9=nexus_contract_ids. DoD nexus filter (D5).
+    pub fn f9(&self, filter_agency: Option<&str>, filter_cage_code: Option<&str>) -> HashSet<&str> {
         if filter_agency.is_none() && filter_cage_code.is_none() {
-            return self.contracts.keys().map(|s| s.as_str()).collect();
+            return self.s7.keys().map(|s| s.as_str()).collect();
         }
-        self.contracts
-            .values()
-            .filter(|c| {
-                let agency_ok = filter_agency
-                    .map(|a| c.agency.as_deref().is_some_and(|x| x.eq_ignore_ascii_case(a)))
-                    .unwrap_or(true);
-                let cage_ok = filter_cage_code
-                    .map(|g| c.cage_code.as_deref().is_some_and(|x| x.eq_ignore_ascii_case(g)))
-                    .unwrap_or(true);
-                agency_ok && cage_ok
-            })
-            .map(|c| c.id.as_str())
-            .collect()
+        self.s7.values().filter(|c| {
+            let agency_ok = filter_agency
+                .map(|a| c.s24.as_deref().is_some_and(|x| x.eq_ignore_ascii_case(a)))
+                .unwrap_or(true);
+            let cage_ok = filter_cage_code
+                .map(|g| c.s23.as_deref().is_some_and(|x| x.eq_ignore_ascii_case(g)))
+                .unwrap_or(true);
+            agency_ok && cage_ok
+        }).map(|c| c.s22.as_str()).collect()
     }
 }
 
-pub struct Ingest;
+/// t4=Ingest
+pub struct t4;
 
-impl Ingest {
-    /// Load and normalize data from config.data_path.
-    pub fn load(config: &Config) -> Result<Dataset> {
-        let path = config
-            .data_path
-            .as_deref()
-            .context("data_path required for ingest")?;
-        Self::load_from_path(Path::new(path))
+impl t4 {
+    /// f4=load. Load and normalize data from config.s2.
+    pub fn f4(config: &t1) -> Result<t3> {
+        let path = config.s2.as_deref().context("data_path required for ingest")?;
+        Self::f5(Path::new(path))
     }
 
-    pub fn load_from_path(path: &Path) -> Result<Dataset> {
-        let mut ds = Dataset::default();
+    /// f5=load_from_path
+    pub fn f5(path: &Path) -> Result<t3> {
+        let mut ds = t3::default();
 
-        let contracts_path = path.join("contracts.json");
-        if contracts_path.exists() {
-            let s = std::fs::read_to_string(&contracts_path)
-                .with_context(|| format!("read {}", contracts_path.display()))?;
-            let raw: Vec<Contract> = serde_json::from_str(&s)
-                .with_context(|| format!("parse {}", contracts_path.display()))?;
-            ds.contracts = raw.into_iter().map(|c| (c.id.clone(), c)).collect();
+        let p = path.join("contracts.json");
+        if p.exists() {
+            let s = std::fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))?;
+            let raw: Vec<t6> = serde_json::from_str(&s).with_context(|| format!("parse {}", p.display()))?;
+            ds.s7 = raw.into_iter().map(|c| (c.s22.clone(), c)).collect();
         }
 
-        let employees_path = path.join("employees.json");
-        if employees_path.exists() {
-            let s = std::fs::read_to_string(&employees_path)
-                .with_context(|| format!("read {}", employees_path.display()))?;
-            let raw: Vec<Employee> = serde_json::from_str(&s)
-                .with_context(|| format!("parse {}", employees_path.display()))?;
-            ds.employees = raw.into_iter().map(|e| (e.id.clone(), e)).collect();
+        let p = path.join("employees.json");
+        if p.exists() {
+            let s = std::fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))?;
+            let raw: Vec<t7> = serde_json::from_str(&s).with_context(|| format!("parse {}", p.display()))?;
+            ds.s8 = raw.into_iter().map(|e| (e.s27.clone(), e)).collect();
         }
 
-        let labor_path = path.join("labor_charges.json");
-        if labor_path.exists() {
-            let s = std::fs::read_to_string(&labor_path)
-                .with_context(|| format!("read {}", labor_path.display()))?;
-            let raw: Vec<LaborCharge> = serde_json::from_str(&s)
-                .with_context(|| format!("parse {}", labor_path.display()))?;
-            ds.labor_charges = raw;
+        let p = path.join("labor_charges.json");
+        if p.exists() {
+            let s = std::fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))?;
+            ds.s9 = serde_json::from_str(&s).with_context(|| format!("parse {}", p.display()))?;
         }
 
-        let billing_path = path.join("billing_records.json");
-        if billing_path.exists() {
-            let s = std::fs::read_to_string(&billing_path)
-                .with_context(|| format!("read {}", billing_path.display()))?;
-            let raw: Vec<BillingRecord> = serde_json::from_str(&s)
-                .with_context(|| format!("parse {}", billing_path.display()))?;
-            ds.billing_records = raw;
+        let p = path.join("billing_records.json");
+        if p.exists() {
+            let s = std::fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))?;
+            ds.s10 = serde_json::from_str(&s).with_context(|| format!("parse {}", p.display()))?;
         }
 
         Ok(ds)
@@ -111,17 +95,17 @@ impl Ingest {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Contract, Employee};
+    use crate::types::{t6, t7};
     use std::collections::HashMap;
 
     #[test]
     fn load_from_path_empty_dir() {
         let tmp = tempfile::TempDir::new().unwrap();
-        let ds = Ingest::load_from_path(tmp.path()).unwrap();
-        assert!(ds.contracts.is_empty());
-        assert!(ds.employees.is_empty());
-        assert!(ds.labor_charges.is_empty());
-        assert!(ds.billing_records.is_empty());
+        let ds = t4::f5(tmp.path()).unwrap();
+        assert!(ds.s7.is_empty());
+        assert!(ds.s8.is_empty());
+        assert!(ds.s9.is_empty());
+        assert!(ds.s10.is_empty());
     }
 
     #[test]
@@ -130,196 +114,97 @@ mod tests {
         std::fs::write(
             tmp.path().join("contracts.json"),
             r#"[{"id":"C1","cage_code":"1X","agency":"DoD","labor_cats":{}}]"#,
-        )
-        .unwrap();
-        let ds = Ingest::load_from_path(tmp.path()).unwrap();
-        assert_eq!(ds.contracts.len(), 1);
-        assert_eq!(ds.contract_by_id("C1").unwrap().id, "C1");
-        assert!(ds.employees.is_empty());
+        ).unwrap();
+        let ds = t4::f5(tmp.path()).unwrap();
+        assert_eq!(ds.s7.len(), 1);
+        assert_eq!(ds.f6("C1").unwrap().s22, "C1");
+        assert!(ds.s8.is_empty());
     }
 
     #[test]
     fn contract_by_id() {
-        let mut ds = Dataset::default();
-        ds.contracts.insert(
-            "C1".into(),
-            Contract {
-                id: "C1".into(),
-                cage_code: Some("1X".into()),
-                agency: Some("DoD".into()),
-                labor_cats: HashMap::new(),
-                ..Default::default()
-            },
-        );
-        assert!(ds.contract_by_id("C1").is_some());
-        assert!(ds.contract_by_id("C2").is_none());
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 {
+            s22: "C1".into(), s23: Some("1X".into()), s24: Some("DoD".into()),
+            s25: HashMap::new(), ..Default::default()
+        });
+        assert!(ds.f6("C1").is_some());
+        assert!(ds.f6("C2").is_none());
     }
 
     #[test]
     fn nexus_contract_ids_no_filter_returns_all() {
-        let mut ds = Dataset::default();
-        ds.contracts.insert(
-            "C1".into(),
-            Contract {
-                id: "C1".into(),
-                cage_code: None,
-                agency: None,
-                labor_cats: HashMap::new(),
-                ..Default::default()
-            },
-        );
-        let ids = ds.nexus_contract_ids(None, None);
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 { s22: "C1".into(), ..Default::default() });
+        let ids = ds.f9(None, None);
         assert_eq!(ids.len(), 1);
         assert!(ids.contains("C1"));
     }
 
     #[test]
     fn nexus_contract_ids_filter_agency() {
-        let mut ds = Dataset::default();
-        ds.contracts.insert(
-            "C1".into(),
-            Contract {
-                id: "C1".into(),
-                cage_code: None,
-                agency: Some("DoD".into()),
-                labor_cats: HashMap::new(),
-                ..Default::default()
-            },
-        );
-        ds.contracts.insert(
-            "C2".into(),
-            Contract {
-                id: "C2".into(),
-                cage_code: None,
-                agency: Some("GSA".into()),
-                labor_cats: HashMap::new(),
-                ..Default::default()
-            },
-        );
-        let ids = ds.nexus_contract_ids(Some("DoD"), None);
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s24: Some("DoD".into()), ..Default::default() });
+        ds.s7.insert("C2".into(), t6 { s22: "C2".into(), s24: Some("GSA".into()), ..Default::default() });
+        let ids = ds.f9(Some("DoD"), None);
         assert_eq!(ids.len(), 1);
         assert!(ids.contains("C1"));
     }
 
     #[test]
     fn nexus_contract_ids_filter_cage() {
-        let mut ds = Dataset::default();
-        ds.contracts.insert(
-            "C1".into(),
-            Contract {
-                id: "C1".into(),
-                cage_code: Some("1ABC".into()),
-                agency: None,
-                labor_cats: HashMap::new(),
-                ..Default::default()
-            },
-        );
-        let ids = ds.nexus_contract_ids(None, Some("1ABC"));
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s23: Some("1ABC".into()), ..Default::default() });
+        let ids = ds.f9(None, Some("1ABC"));
         assert_eq!(ids.len(), 1);
     }
 
     #[test]
     fn nexus_contract_ids_case_insensitive() {
-        let mut ds = Dataset::default();
-        ds.contracts.insert(
-            "C1".into(),
-            Contract {
-                id: "C1".into(),
-                cage_code: None,
-                agency: Some("DoD".into()),
-                labor_cats: HashMap::new(),
-                ..Default::default()
-            },
-        );
-        let ids = ds.nexus_contract_ids(Some("dod"), None);
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s24: Some("DoD".into()), ..Default::default() });
+        let ids = ds.f9(Some("dod"), None);
         assert_eq!(ids.len(), 1);
     }
 
     #[test]
     fn nexus_contract_ids_both_filters() {
-        let mut ds = Dataset::default();
-        ds.contracts.insert(
-            "C1".into(),
-            Contract {
-                id: "C1".into(),
-                cage_code: Some("1X".into()),
-                agency: Some("DoD".into()),
-                labor_cats: HashMap::new(),
-                ..Default::default()
-            },
-        );
-        ds.contracts.insert(
-            "C2".into(),
-            Contract {
-                id: "C2".into(),
-                cage_code: Some("2Y".into()),
-                agency: Some("DoD".into()),
-                labor_cats: HashMap::new(),
-                ..Default::default()
-            },
-        );
-        let ids = ds.nexus_contract_ids(Some("DoD"), Some("1X"));
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s23: Some("1X".into()), s24: Some("DoD".into()), ..Default::default() });
+        ds.s7.insert("C2".into(), t6 { s22: "C2".into(), s23: Some("2Y".into()), s24: Some("DoD".into()), ..Default::default() });
+        let ids = ds.f9(Some("DoD"), Some("1X"));
         assert_eq!(ids.len(), 1);
         assert!(ids.contains("C1"));
     }
 
     #[test]
     fn nexus_contract_ids_empty_ds() {
-        let ds = Dataset::default();
-        let ids = ds.nexus_contract_ids(None, None);
-        assert!(ids.is_empty());
+        let ds = t3::default();
+        assert!(ds.f9(None, None).is_empty());
     }
 
     #[test]
     fn nexus_contract_ids_filter_excludes_missing_agency() {
-        let mut ds = Dataset::default();
-        ds.contracts.insert(
-            "C1".into(),
-            Contract {
-                id: "C1".into(),
-                cage_code: None,
-                agency: None,
-                labor_cats: HashMap::new(),
-                ..Default::default()
-            },
-        );
-        let ids = ds.nexus_contract_ids(Some("DoD"), None);
-        assert!(ids.is_empty(), "contract with no agency must not match agency filter");
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 { s22: "C1".into(), ..Default::default() });
+        let ids = ds.f9(Some("DoD"), None);
+        assert!(ids.is_empty());
     }
 
     #[test]
     fn employee_by_id() {
-        let mut ds = Dataset::default();
-        ds.employees.insert(
-            "E1".into(),
-            Employee {
-                id: "E1".into(),
-                quals: vec!["BA".into()],
-                ..Default::default()
-            },
-        );
-        assert!(ds.employee_by_id("E1").is_some());
-        assert!(ds.employee_by_id("E2").is_none());
+        let mut ds = t3::default();
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s28: vec!["BA".into()], ..Default::default() });
+        assert!(ds.f7("E1").is_some());
+        assert!(ds.f7("E2").is_none());
     }
 
     #[test]
     fn employee_ids() {
-        let mut ds = Dataset::default();
-        ds.employees.insert(
-            "E1".into(),
-            Employee {
-                id: "E1".into(),
-                ..Default::default()
-            },
-        );
-        ds.employees.insert(
-            "E2".into(),
-            Employee {
-                id: "E2".into(),
-                ..Default::default()
-            },
-        );
-        let ids = ds.employee_ids();
+        let mut ds = t3::default();
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), ..Default::default() });
+        ds.s8.insert("E2".into(), t7 { s27: "E2".into(), ..Default::default() });
+        let ids = ds.f8();
         assert_eq!(ids.len(), 2);
         assert!(ids.contains("E1"));
         assert!(ids.contains("E2"));
@@ -332,17 +217,17 @@ mod tests {
         std::fs::write(tmp.path().join("employees.json"), r#"[{"id":"E1","quals":[],"verified":false}]"#).unwrap();
         std::fs::write(tmp.path().join("labor_charges.json"), r#"[{"contract_id":"C1","employee_id":"E1","labor_cat":"X","hours":1.0}]"#).unwrap();
         std::fs::write(tmp.path().join("billing_records.json"), r#"[{"contract_id":"C1","employee_id":"E1","billed_hours":1.0,"billed_cat":"X"}]"#).unwrap();
-        let ds = Ingest::load_from_path(tmp.path()).unwrap();
-        assert_eq!(ds.contracts.len(), 1);
-        assert_eq!(ds.employees.len(), 1);
-        assert_eq!(ds.labor_charges.len(), 1);
-        assert_eq!(ds.billing_records.len(), 1);
+        let ds = t4::f5(tmp.path()).unwrap();
+        assert_eq!(ds.s7.len(), 1);
+        assert_eq!(ds.s8.len(), 1);
+        assert_eq!(ds.s9.len(), 1);
+        assert_eq!(ds.s10.len(), 1);
     }
 
     #[test]
     fn load_from_path_invalid_json_fails() {
         let tmp = tempfile::TempDir::new().unwrap();
         std::fs::write(tmp.path().join("contracts.json"), "not json").unwrap();
-        assert!(Ingest::load_from_path(tmp.path()).is_err());
+        assert!(t4::f5(tmp.path()).is_err());
     }
 }

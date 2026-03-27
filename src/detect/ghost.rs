@@ -1,140 +1,89 @@
-//! Ghost billing detection (Ghost Employees, Employee Existence).
+//! Ghost billing detection. P13 compressed.
 //!
 //! Red flags: unexplained employee ID gaps, billed-but-not-performed.
 
-use crate::data::Dataset;
-use crate::types::{Alert, FraudType, PredicateAct, RuleId};
-use crate::util::now_rfc3339;
+use crate::data::t3;
+use crate::types::{t5, t10, t11, t12};
+use crate::util::f20;
 use std::collections::HashSet;
 
-pub struct GhostDetector;
+/// t14=GhostDetector
+pub struct t14;
 
-impl Default for GhostDetector {
-    fn default() -> Self {
-        Self
-    }
+impl Default for t14 {
+    fn default() -> Self { Self }
 }
 
-impl GhostDetector {
-    pub fn new() -> Self {
-        Self
-    }
+impl t14 {
+    /// f12=new
+    pub fn f12() -> Self { Self }
 
+    /// f13=run
     #[must_use]
-    pub fn run(&self, ds: &Dataset) -> Vec<Alert> {
+    pub fn f13(&self, ds: &t3) -> Vec<t5> {
         let mut alerts = Vec::new();
-        let employee_ids: HashSet<&str> = ds.employee_ids();
+        let employee_ids: HashSet<&str> = ds.f8();
 
-        let performed_hours: std::collections::HashMap<(String, String, String), f64> = ds
-            .labor_charges
+        let performed_hours: std::collections::HashMap<(String, String, String), f64> = ds.s9
             .iter()
-            .fold(
-                std::collections::HashMap::new(),
-                |mut acc, lc| {
-                    let key = (
-                        lc.contract_id.clone(),
-                        lc.employee_id.clone(),
-                        lc.labor_cat.clone(),
-                    );
-                    *acc.entry(key).or_insert(0.0) += lc.hours;
-                    acc
-                },
-            );
+            .fold(std::collections::HashMap::new(), |mut acc, lc| {
+                let key = (lc.s31.clone(), lc.s32.clone(), lc.s33.clone());
+                *acc.entry(key).or_insert(0.0) += lc.s34;
+                acc
+            });
 
-        for br in &ds.billing_records {
-            let contract = ds.contract_by_id(&br.contract_id);
+        for br in &ds.s10 {
+            let contract = ds.f6(&br.s36);
             let (cage_code, agency) = contract
-                .map(|c| (c.cage_code.as_deref(), c.agency.as_deref()))
+                .map(|c| (c.s23.as_deref(), c.s24.as_deref()))
                 .unwrap_or((None, None));
 
-            if !employee_ids.contains(br.employee_id.as_str()) {
-                alerts.push(alert(
-                    RuleId::GhostNoEmployee,
-                    95,
-                    8,
-                    &format!(
-                        "Billed employee '{}' not in employee roster",
-                        br.employee_id
-                    ),
-                    Some(&br.contract_id),
-                    Some(&br.employee_id),
-                    cage_code,
-                    agency,
-                    vec![PredicateAct::FalseClaims, PredicateAct::IdentityFraud],
+            if !employee_ids.contains(br.s37.as_str()) {
+                alerts.push(alert(t11::E7, 95, 8,
+                    &format!("Billed employee '{}' not in employee roster", br.s37),
+                    Some(&br.s36), Some(&br.s37), cage_code, agency,
+                    vec![t12::E12, t12::E14],
                 ));
             }
 
-            if let Some(emp) = ds.employee_by_id(&br.employee_id) {
-                if !emp.verified {
-                    alerts.push(alert(
-                        RuleId::GhostNotVerified,
-                        70,
-                        5,
-                        &format!(
-                            "Billed employee '{}' has no floorcheck verification",
-                            br.employee_id
-                        ),
-                        Some(&br.contract_id),
-                        Some(&br.employee_id),
-                        cage_code,
-                        agency,
-                        vec![PredicateAct::FalseClaims],
+            if let Some(emp) = ds.f7(&br.s37) {
+                if !emp.s30 {
+                    alerts.push(alert(t11::E8, 70, 5,
+                        &format!("Billed employee '{}' has no floorcheck verification", br.s37),
+                        Some(&br.s36), Some(&br.s37), cage_code, agency,
+                        vec![t12::E12],
                     ));
                 }
             }
 
-            let key = (
-                br.contract_id.clone(),
-                br.employee_id.clone(),
-                br.billed_cat.clone(),
-            );
+            let key = (br.s36.clone(), br.s37.clone(), br.s39.clone());
             let performed = performed_hours.get(&key).copied().unwrap_or(0.0);
-            if performed < br.billed_hours - 0.01 {
+            if performed < br.s38 - 0.01 {
                 let (conf, sev) = if performed == 0.0 { (90, 8) } else { (80, 7) };
-                alerts.push(alert(
-                    RuleId::GhostBilledNotPerformed,
-                    conf,
-                    sev,
-                    &format!(
-                        "Billed {} hrs for {}/{}/{} but only {} hrs performed",
-                        br.billed_hours, br.contract_id, br.employee_id, br.billed_cat, performed
-                    ),
-                    Some(&br.contract_id),
-                    Some(&br.employee_id),
-                    cage_code,
-                    agency,
-                    vec![PredicateAct::FalseClaims, PredicateAct::WireFraud],
+                alerts.push(alert(t11::E9, conf, sev,
+                    &format!("Billed {} hrs for {}/{}/{} but only {} hrs performed",
+                        br.s38, br.s36, br.s37, br.s39, performed),
+                    Some(&br.s36), Some(&br.s37), cage_code, agency,
+                    vec![t12::E12, t12::E13],
                 ));
             }
         }
-
         alerts
     }
 }
 
 #[allow(clippy::too_many_arguments)]
 fn alert(
-    rule_id: RuleId,
-    confidence: u8,
-    severity: u8,
-    summary: &str,
-    contract_id: Option<&str>,
-    employee_id: Option<&str>,
-    cage_code: Option<&str>,
-    agency: Option<&str>,
-    predicate_acts: Vec<PredicateAct>,
-) -> Alert {
-    Alert {
-        fraud_type: FraudType::GhostBilling,
-        rule_id,
-        severity,
-        confidence,
-        summary: summary.to_string(),
-        contract_id: contract_id.map(String::from),
-        employee_id: employee_id.map(String::from),
-        cage_code: cage_code.map(String::from),
-        agency: agency.map(String::from),
-        predicate_acts: Some(predicate_acts),
-        timestamp: Some(now_rfc3339()),
+    rule_id: t11, confidence: u8, severity: u8, summary: &str,
+    contract_id: Option<&str>, employee_id: Option<&str>,
+    cage_code: Option<&str>, agency: Option<&str>,
+    predicate_acts: Vec<t12>,
+) -> t5 {
+    t5 {
+        s11: t10::E3, s12: rule_id, s13: severity, s14: confidence,
+        s15: summary.to_string(),
+        s16: contract_id.map(String::from), s17: employee_id.map(String::from),
+        s18: cage_code.map(String::from), s19: agency.map(String::from),
+        s20: Some(predicate_acts), s21: Some(f20()),
     }
 }

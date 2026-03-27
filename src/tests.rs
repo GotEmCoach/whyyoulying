@@ -1,9 +1,8 @@
-//! f49–f60 self-eval. Only compiled with tests feature. whyyoulying-test binary runs this.
+//! f49–f60 self-eval. Only compiled with tests feature. P13 compressed.
 
 use std::path::PathBuf;
 use std::process::Command;
 
-/// Path to release binary (whyyoulying). E2E tests invoke it.
 fn release_bin() -> PathBuf {
     let exe = std::env::current_exe().expect("current exe");
     let dir = exe.parent().expect("parent");
@@ -25,7 +24,7 @@ fn run_bin(args: &[&str]) -> (std::process::Output, String, String) {
     (out, stdout, stderr)
 }
 
-/// f30 = run_tests
+/// f30=run_tests
 pub fn f30() -> i32 {
     let mut failed = 0;
     let green = "\x1b[32m";
@@ -47,51 +46,33 @@ pub fn f30() -> i32 {
         ("f60 empty exit zero", f60()),
     ] {
         print!("{name}: ");
-        if pass {
-            println!("{green}PASS{reset}");
-        } else {
-            println!("{red}FAIL{reset}");
-            failed += 1;
-        }
+        if pass { println!("{green}PASS{reset}"); }
+        else { println!("{red}FAIL{reset}"); failed += 1; }
     }
 
-    if failed > 0 {
-        eprintln!("\n{failed} test(s) failed");
-        1
-    } else {
-        eprintln!("\nall tests passed");
-        0
-    }
+    if failed > 0 { eprintln!("\n{failed} test(s) failed"); 1 }
+    else { eprintln!("\nall tests passed"); 0 }
 }
 
 fn f49() -> bool {
     use crate::{Alert, Config, Dataset, FraudType, LaborDetector, RuleId};
 
     let cfg = Config::default();
-    assert!(cfg.labor_variance_threshold_pct > 0.0);
+    assert!(cfg.s1 > 0.0);
 
-    let labor = LaborDetector::new(15.0);
+    let labor = LaborDetector::f10(15.0);
     let ds = Dataset::default();
-    let alerts = labor.run(&ds);
+    let alerts = labor.f11(&ds);
     assert!(alerts.is_empty());
 
     let alert = Alert {
-        fraud_type: FraudType::LaborCategory,
-        rule_id: RuleId::LaborVariance,
-        severity: 5,
-        confidence: 85,
-        summary: "test".to_string(),
-        contract_id: Some("C1".to_string()),
-        employee_id: Some("E1".to_string()),
-        cage_code: None,
-        agency: None,
-        predicate_acts: None,
-        timestamp: Some("2026-01-01T00:00:00Z".to_string()),
+        s11: FraudType::E2, s12: RuleId::E4, s13: 5, s14: 85,
+        s15: "test".to_string(), s16: Some("C1".to_string()), s17: Some("E1".to_string()),
+        s18: None, s19: None, s20: None, s21: Some("2026-01-01T00:00:00Z".to_string()),
     };
     let json = serde_json::to_string(&alert).unwrap();
     assert!(json.contains("labor_category"));
     assert!(json.contains("LABOR_VARIANCE"));
-
     true
 }
 
@@ -103,48 +84,38 @@ fn f50() -> bool {
 
     let contracts = serde_json::json!([{"id":"C1","cage_code":null,"agency":null,"labor_cats":{"Senior":"BA"}}]);
     std::fs::write(p.join("contracts.json"), contracts.to_string()).unwrap();
-
     let employees = serde_json::json!([{"id":"E1","quals":["BA"],"labor_cat_min":"Junior","verified":false}]);
     std::fs::write(p.join("employees.json"), employees.to_string()).unwrap();
-
     let labor = serde_json::json!([{"contract_id":"C1","employee_id":"E1","labor_cat":"Principal","hours":40.0,"rate":150.0}]);
     std::fs::write(p.join("labor_charges.json"), labor.to_string()).unwrap();
-
     let billing = serde_json::json!([{"contract_id":"C1","employee_id":"E99","billed_hours":10.0,"billed_cat":"Junior","period":"2026-01"}]);
     std::fs::write(p.join("billing_records.json"), billing.to_string()).unwrap();
 
-    let ds = crate::Ingest::load_from_path(p).unwrap();
-    assert_eq!(ds.contracts.len(), 1);
-    assert_eq!(ds.employees.len(), 1);
-    assert_eq!(ds.labor_charges.len(), 1);
-    assert_eq!(ds.billing_records.len(), 1);
+    let ds = crate::Ingest::f5(p).unwrap();
+    assert_eq!(ds.s7.len(), 1);
+    assert_eq!(ds.s8.len(), 1);
+    assert_eq!(ds.s9.len(), 1);
+    assert_eq!(ds.s10.len(), 1);
 
-    let labor_det = crate::LaborDetector::new(15.0);
-    let ghost_det = crate::GhostDetector::new();
-    let labor_alerts = labor_det.run(&ds);
-    let ghost_alerts = ghost_det.run(&ds);
+    let labor_det = crate::LaborDetector::f10(15.0);
+    let ghost_det = crate::GhostDetector::f12();
+    let labor_alerts = labor_det.f11(&ds);
+    let ghost_alerts = ghost_det.f13(&ds);
     assert!(!labor_alerts.is_empty());
-    assert!(labor_alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("LaborQualBelow")));
+    assert!(labor_alerts.iter().any(|a| format!("{:?}", a.s12).contains("E5")));
     assert!(!ghost_alerts.is_empty());
-    assert!(ghost_alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("GhostNoEmployee")));
-
+    assert!(ghost_alerts.iter().any(|a| format!("{:?}", a.s12).contains("E7")));
     true
 }
 
 fn f51() -> bool {
     let fixtures = fixtures_path();
     assert!(fixtures.exists(), "f51: fixtures dir required");
-    let out = Command::new(release_bin())
-        .arg("--data-path")
-        .arg(&fixtures)
-        .output()
-        .unwrap();
+    let out = Command::new(release_bin()).arg("--data-path").arg(&fixtures).output().unwrap();
     assert!(out.status.success() || out.status.code() == Some(1));
     let stdout = String::from_utf8(out.stdout).unwrap();
     let stderr = String::from_utf8(out.stderr).unwrap();
-    if stdout.is_empty() && !out.status.success() {
-        eprintln!("f51 stderr: {stderr}");
-    }
+    if stdout.is_empty() && !out.status.success() { eprintln!("f51 stderr: {stderr}"); }
     if !stdout.is_empty() {
         let parsed: Result<Vec<serde_json::Value>, _> = serde_json::from_str(&stdout);
         assert!(parsed.is_ok(), "f51: stdout should be valid JSON array");
@@ -154,7 +125,6 @@ fn f51() -> bool {
 
 fn f52() -> bool {
     let fixtures = fixtures_path();
-    assert!(fixtures.exists(), "f52: fixtures dir required");
     let (out, stdout, _) = run_bin(&["--data-path", fixtures.to_str().unwrap()]);
     assert!(out.status.code() == Some(1));
     let parsed: Vec<serde_json::Value> = serde_json::from_str(&stdout).unwrap();
@@ -164,17 +134,9 @@ fn f52() -> bool {
 
 fn f53() -> bool {
     let fixtures = fixtures_path();
-    assert!(fixtures.exists(), "f53: fixtures dir required");
-    let (_, stdout, _) = run_bin(&[
-        "--data-path",
-        fixtures.to_str().unwrap(),
-        "--min-confidence",
-        "99",
-    ]);
+    let (_, stdout, _) = run_bin(&["--data-path", fixtures.to_str().unwrap(), "--min-confidence", "99"]);
     let parsed: Vec<serde_json::Value> = serde_json::from_str(&stdout).unwrap();
-    for a in &parsed {
-        assert!(a["confidence"].as_u64().unwrap_or(0) >= 99);
-    }
+    for a in &parsed { assert!(a["confidence"].as_u64().unwrap_or(0) >= 99); }
     true
 }
 
@@ -195,29 +157,15 @@ fn f55() -> bool {
 
 fn f56() -> bool {
     let fixtures = fixtures_path();
-    assert!(fixtures.exists(), "f56: fixtures dir required");
-    let (_, stdout, _) = run_bin(&[
-        "--data-path",
-        fixtures.to_str().unwrap(),
-        "--agency",
-        "DoD",
-    ]);
+    let (_, stdout, _) = run_bin(&["--data-path", fixtures.to_str().unwrap(), "--agency", "DoD"]);
     let parsed: Vec<serde_json::Value> = serde_json::from_str(&stdout).unwrap();
-    for a in &parsed {
-        assert_eq!(a["agency"].as_str(), Some("DoD"));
-    }
+    for a in &parsed { assert_eq!(a["agency"].as_str(), Some("DoD")); }
     true
 }
 
 fn f57() -> bool {
     let fixtures = fixtures_path();
-    assert!(fixtures.exists(), "f57: fixtures dir required");
-    let (_, stdout, _) = run_bin(&[
-        "--data-path",
-        fixtures.to_str().unwrap(),
-        "--output",
-        "csv",
-    ]);
+    let (_, stdout, _) = run_bin(&["--data-path", fixtures.to_str().unwrap(), "--output", "csv"]);
     assert!(stdout.contains("fraud_type"));
     assert!(stdout.contains("confidence"));
     assert!(stdout.lines().count() >= 2);
@@ -226,41 +174,26 @@ fn f57() -> bool {
 
 fn f58() -> bool {
     let fixtures = fixtures_path();
-    assert!(fixtures.exists(), "f58: fixtures dir required");
     let tmp = tempfile::TempDir::new().unwrap();
     let p = tmp.path().join("ref.json");
-    let (out, _, _) = run_bin(&[
-        "--data-path",
-        fixtures.to_str().unwrap(),
-        "export-referral",
-        "--path",
-        p.to_str().unwrap(),
-    ]);
+    let (out, _, _) = run_bin(&["--data-path", fixtures.to_str().unwrap(), "export-referral", "--path", p.to_str().unwrap()]);
     assert!(out.status.code() == Some(0) || out.status.code() == Some(1));
     assert!(p.exists());
     let content = std::fs::read_to_string(&p).unwrap();
     let parsed: serde_json::Value = serde_json::from_str(&content).unwrap();
-    assert!(parsed["document_type"].as_str().unwrap().contains("DoD"));
+    assert!(parsed["s43"].as_str().unwrap().contains("DoD"));
     true
 }
 
 fn f59() -> bool {
     let fixtures = fixtures_path();
-    assert!(fixtures.exists(), "f59: fixtures dir required");
     let tmp = tempfile::TempDir::new().unwrap();
     let p = tmp.path().join("fbi.json");
-    let (out, _, _) = run_bin(&[
-        "--data-path",
-        fixtures.to_str().unwrap(),
-        "export-referral",
-        "--fbi",
-        "--path",
-        p.to_str().unwrap(),
-    ]);
+    let (out, _, _) = run_bin(&["--data-path", fixtures.to_str().unwrap(), "export-referral", "--fbi", "--path", p.to_str().unwrap()]);
     assert!(out.status.code() == Some(0) || out.status.code() == Some(1));
     let content = std::fs::read_to_string(&p).unwrap();
     let parsed: serde_json::Value = serde_json::from_str(&content).unwrap();
-    assert!(parsed["document_type"].as_str().unwrap().contains("FBI"));
+    assert!(parsed["s55"].as_str().unwrap().contains("FBI"));
     true
 }
 

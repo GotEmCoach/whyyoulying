@@ -1,69 +1,57 @@
-//! Time overcharging detection.
+//! Time overcharging detection. P13 compressed.
 //!
-//! Red flag: employee total billed hours in a period exceed max (default 176 hrs/month).
-//! DoD IG fraud scenario: Time Overcharging.
+//! Red flag: employee total billed hours in a period exceed max.
 
-use crate::data::Dataset;
-use crate::types::{Alert, FraudType, PredicateAct, RuleId};
-use crate::util::now_rfc3339;
+use crate::data::t3;
+use crate::types::{t5, t10, t11, t12};
+use crate::util::f20;
 use std::collections::HashMap;
 
-pub struct TimeDetector {
-    pub max_hours_per_period: f64,
+/// t15=TimeDetector
+pub struct t15 {
+    /// s42=max_hours_per_period
+    pub s42: f64,
 }
 
-impl TimeDetector {
-    pub fn new(max_hours_per_period: f64) -> Self {
-        Self { max_hours_per_period }
-    }
+impl t15 {
+    /// f14=new
+    pub fn f14(max_hours_per_period: f64) -> Self { Self { s42: max_hours_per_period } }
 
+    /// f15=run
     #[must_use]
-    pub fn run(&self, ds: &Dataset) -> Vec<Alert> {
+    pub fn f15(&self, ds: &t3) -> Vec<t5> {
         let mut alerts = Vec::new();
-
-        // Aggregate billed hours per (employee_id, period).
-        // Track contract IDs per key for agency/cage lookup.
-        // Skip records without a period — can't detect overcharge without time boundary.
         let mut totals: HashMap<(&str, &str), f64> = HashMap::new();
         let mut contracts_per_key: HashMap<(&str, &str), Vec<&str>> = HashMap::new();
-        for br in &ds.billing_records {
-            if let Some(ref period) = br.period {
-                let key = (br.employee_id.as_str(), period.as_str());
-                *totals.entry(key).or_insert(0.0) += br.billed_hours;
-                contracts_per_key.entry(key).or_default().push(br.contract_id.as_str());
+
+        for br in &ds.s10 {
+            if let Some(ref period) = br.s40 {
+                let key = (br.s37.as_str(), period.as_str());
+                *totals.entry(key).or_insert(0.0) += br.s38;
+                contracts_per_key.entry(key).or_default().push(br.s36.as_str());
             }
         }
 
         for ((employee_id, period), total_hours) in &totals {
-            if *total_hours > self.max_hours_per_period {
-                let excess = total_hours - self.max_hours_per_period;
-
-                // Pull agency/cage from first known contract for nexus filtering.
+            if *total_hours > self.s42 {
+                let excess = total_hours - self.s42;
                 let (cage_code, agency) = contracts_per_key
                     .get(&(*employee_id, *period))
-                    .and_then(|cids| cids.iter().find_map(|cid| ds.contract_by_id(cid)))
-                    .map(|c| (c.cage_code.clone(), c.agency.clone()))
+                    .and_then(|cids| cids.iter().find_map(|cid| ds.f6(cid)))
+                    .map(|c| (c.s23.clone(), c.s24.clone()))
                     .unwrap_or((None, None));
 
-                alerts.push(Alert {
-                    fraud_type: FraudType::GhostBilling,
-                    rule_id: RuleId::TimeOvercharge,
-                    severity: if excess > 40.0 { 8 } else { 6 },
-                    confidence: 80,
-                    summary: format!(
-                        "Employee '{}' billed {:.1} hrs in period {} (max {:.0}, excess {:.1})",
-                        employee_id, total_hours, period, self.max_hours_per_period, excess
-                    ),
-                    contract_id: None,
-                    employee_id: Some(employee_id.to_string()),
-                    cage_code,
-                    agency,
-                    predicate_acts: Some(vec![PredicateAct::FalseClaims]),
-                    timestamp: Some(now_rfc3339()),
+                alerts.push(t5 {
+                    s11: t10::E3, s12: t11::E10,
+                    s13: if excess > 40.0 { 8 } else { 6 }, s14: 80,
+                    s15: format!("Employee '{}' billed {:.1} hrs in period {} (max {:.0}, excess {:.1})",
+                        employee_id, total_hours, period, self.s42, excess),
+                    s16: None, s17: Some(employee_id.to_string()),
+                    s18: cage_code, s19: agency,
+                    s20: Some(vec![t12::E12]), s21: Some(f20()),
                 });
             }
         }
-
         alerts
     }
 }

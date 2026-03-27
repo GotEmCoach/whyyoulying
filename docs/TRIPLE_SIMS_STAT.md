@@ -1,7 +1,7 @@
 # TRIPLE SIMS Test Coverage Stat — whyyoulying
 
 **Method:** Sim1→2→3→4. f49 f50 f51. Same binary.  
-**Command:** `cargo run -p whyyoulying -- --test`  
+**Command:** `cargo run --bin whyyoulying-test --features tests`
 **Date:** 2026-02-27
 
 ---
@@ -10,10 +10,9 @@
 
 | Phase | Count | Description |
 |-------|-------|-------------|
-| cargo test (unit) | 50 | config(10), types(9), data(12), detect(11), export(8) |
-| cargo test (integration) | 10 | run, agency, csv, export-referral, export-fbi, empty, --test |
-| --test f49–f60 | 12 | Unit, TempDir, e2e, self-integration (run, agency, csv, export, empty) |
-| — | **72** | |
+| cargo test (unit) | 52 | config(11), types(9), data(14), detect(11), export(7) |
+| whyyoulying-test f49–f60 | 12 | Unit, TempDir, e2e, self-integration (run, agency, csv, export, empty) |
+| — | **64** | |
 
 ---
 
@@ -40,7 +39,7 @@
 
 | Criterion | Test(s) |
 |-----------|---------|
-| --test flag | f49 f50 f51 |
+| Test binary | f49–f60 via whyyoulying-test |
 | Exit codes | f51 e2e |
 
 ### Sim 4: Output Schema
@@ -55,8 +54,8 @@
 ## Run
 
 ```bash
-cargo build --release && cargo run --release -- --test
+cargo build --release && cargo run --bin whyyoulying-test --features tests
 # or: @b && @t
 ```
 
-Exit 0 = all pass. Same binary (P14). E2E tests require release build.
+Exit 0 = all pass. Separate test binary (P14). E2E tests require release build.

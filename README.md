@@ -42,8 +42,8 @@ cargo build --release
 # Run detection on sample data
 cargo run --release -- --data-path fixtures run
 
-# Run test suite (f49 f50 f51...)
-cargo run --release -- --test
+# Run test suite (f49–f60)
+cargo run --bin whyyoulying-test --features tests
 ```
 
 ---
@@ -67,7 +67,6 @@ cargo run --release -- --test
 | `--agency AGENCY` | DoD nexus: filter by agency (e.g. DoD, Army) |
 | `--cage-code CODE` | DoD nexus: filter by CAGE code |
 | `--output json\|csv` | Output format |
-| `--test` | Run f49–f60 test suite |
 
 ### Exit Codes
 
@@ -106,4 +105,6 @@ See `fixtures/` for examples.
 
 - [USER_STORY_ANALYSIS](docs/USER_STORY_ANALYSIS.md) — DoD IG / FBI personas
 - [TRIPLE_SIMS_WHYYOULYING](docs/TRIPLE_SIMS_WHYYOULYING.md) — Sim 1–4
-- [TRIPLE_SIMS_ARCH](docs/TRIPLE_SIMS_ARCH.md) — Domain model, pipeline 
+- [TRIPLE_SIMS_ARCH](docs/TRIPLE_SIMS_ARCH.md) — Domain model, pipeline
+- [TRIPLE_SIMS_STAT](docs/TRIPLE_SIMS_STAT.md) — Test coverage stats
+- [protocol_map](docs/protocol_map.md) — Protocol abbreviations and commands

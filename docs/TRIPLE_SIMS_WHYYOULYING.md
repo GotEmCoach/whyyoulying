@@ -35,7 +35,7 @@
 | Alert output | Alert struct | types::Alert (rule_id, confidence, predicate_acts) | ✓ |
 | Fraud referral export | GAGAS / predicate docs | export-referral, export-referral --fbi | ✓ |
 | Audit trail | Chain of custody | ReferralPackage.chain_of_custody, audit_entries | ✓ |
-| --test flag | f49 f50 f51 same binary | ✓ | ✓ |
+| Test binary (f49–f60) | whyyoulying-test via exopack triple_sims | ✓ | ✓ |
 
 ### Prioritized Gaps
 
@@ -69,7 +69,7 @@
 | 2 | Subcommands | `run`, `ingest`, `export-referral` |
 | 3 | Exit codes | 0=ok, 1=alerts found, 2=error |
 | 4 | Logging | stderr for progress; stdout for structured output only |
-| 5 | --test | f49 f50 f51; colored PASS/FAIL |
+| 5 | Test binary | f49–f60 via `cargo run --bin whyyoulying-test --features tests` |
 
 ---
 
@@ -106,7 +106,7 @@
 | 4 | Sim 4 Output Schema | ✓ Alert (rule_id, timestamp); ReferralPackage + AuditEntry |
 | 5 | Architecture (TRIPLE_SIMS_ARCH.md) | ✓ Domain model, pipeline, phases |
 | 6 | Domain types | ✓ Contract, Employee, LaborCharge, BillingRecord |
-| 7 | --test binary | ✓ f49 f50 f51; colored PASS/FAIL |
+| 7 | Test binary (whyyoulying-test) | ✓ f49–f60; colored PASS/FAIL via exopack |
 | 8 | Data ingestion | ✓ JSON from data_path (contracts, employees, labor_charges, billing_records) |
 | 9 | Labor/Ghost detectors | ✓ LABOR_VARIANCE, LABOR_QUAL_BELOW, GHOST_* |
 | 10 | Referral export | ✓ GAGAS structure with audit entries |

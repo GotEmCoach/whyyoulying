@@ -16,8 +16,8 @@
 │ id              │     │ id              │     │ contract_id     │
 │ cage_code       │     │ quals[]         │     │ employee_id     │
 │ agency          │     │ labor_cat_min   │     │ labor_cat       │
-│ labor_cats[]    │     │ hire_date       │     │ hours           │
-│ (proposal/req)  │     │ verified        │     │ rate            │
+│ labor_cats[]    │     │ verified        │     │ hours           │
+│ (proposal/req)  │     │                 │     │ rate            │
 └────────┬────────┘     └────────┬────────┘     └────────┬────────┘
          │                       │                       │
          └───────────────────────┴───────────────────────┘
@@ -79,7 +79,7 @@
 | Stage | Module | Output |
 |-------|--------|--------|
 | Ingest | `data::Ingest` | Raw records (contract, labor, billing) |
-| Normalize | `data` (or `data::normalize`) | Contract, Employee, LaborCharge, BillingRecord |
+| Normalize | `data` | Contract, Employee, LaborCharge, BillingRecord |
 | Detect | `detect::labor`, `detect::ghost` | Vec&lt;Alert&gt; |
 | Output | `main` / CLI | stdout (JSON/CSV) or file |
 | Export | `export::referral_package`, `export::fbi_case_opening` | Referral package, FBI case docs |
@@ -91,7 +91,7 @@
 
 | rule_id | Detector | Description |
 |---------|----------|-------------|
-| `LABOR_VARIANCE` | LaborDetector | Budget vs actual variance exceeds threshold |
+| `LABOR_VARIANCE` | LaborDetector | Charged labor category not in contract's approved categories |
 | `LABOR_QUAL_BELOW` | LaborDetector | Employee quals below charged category min |
 | `GHOST_NO_EMPLOYEE` | GhostDetector | Billed employee_id not in Employee set |
 | `GHOST_NOT_VERIFIED` | GhostDetector | Billed but no floorcheck verification |
@@ -108,7 +108,7 @@
 | A1 | Domain types (Contract, Employee, LaborCharge, BillingRecord) | `types.rs` | — |
 | A2 | Alert + timestamp, rule_id | `types.rs` | — |
 | A3 | Config from file + --config, --data-path, --threshold | `config.rs`, `main.rs` | — |
-| A4 | --test binary (f49 f50 f51 scaffold) | `main.rs` | P14 |
+| A4 | Test binary (f49–f60) | `src/bin/whyyoulying-test.rs`, `src/tests.rs` | P14 |
 
 ### Phase B: Data
 
@@ -144,32 +144,35 @@
 
 ---
 
-## 5. File Structure (Proposed)
+## 5. File Structure
 
 ```
 src/
-├── main.rs          # CLI, --test, subcommands
+├── main.rs              # CLI, subcommands (run, ingest, export-referral)
 ├── lib.rs
 ├── config.rs
-├── types.rs         # Alert, FraudType, Contract, Employee, LaborCharge, BillingRecord
-├── data.rs          # Ingest, normalize
+├── types.rs             # Alert, FraudType, Contract, Employee, LaborCharge, BillingRecord
+├── data.rs              # Ingest, Dataset, normalize
+├── tests.rs             # f49–f60 test harness (feature-gated: tests)
 ├── detect/
 │   ├── mod.rs
 │   ├── labor.rs
 │   └── ghost.rs
-└── export/
-    └── mod.rs       # referral_package, fbi_case_opening
+├── export/
+│   └── mod.rs           # referral_package, fbi_case_opening
+└── bin/
+    └── whyyoulying-test.rs  # Test binary entry point (exopack triple_sims)
 ```
 
 ---
 
-## 6. Test Strategy (f49 f50 f51)
+## 6. Test Strategy (f49–f60)
 
 | Tier | Scope | I/O | Example |
 |------|-------|-----|---------|
-| f49 | Unit | None | Config::load, Alert::serialize, LaborDetector::run with mock data |
-| f50 | Integration | TempDir | Ingest from temp JSON files; detect pipeline |
-| f51 | E2E | Real | Optional: real data path; colored PASS/FAIL |
+| f49 | Unit | None | Config::load, Alert::serialize, LaborDetector::run with empty data |
+| f50 | Integration | TempDir | Ingest from temp JSON files; labor + ghost detection |
+| f51–f60 | E2E | Binary + fixtures | CLI invocation: run, ingest, export, filters, CSV, exit codes |
 
 ---
 

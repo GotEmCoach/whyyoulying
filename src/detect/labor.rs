@@ -4,7 +4,7 @@
 
 use crate::data::Dataset;
 use crate::types::{Alert, FraudType, PredicateAct, RuleId};
-use chrono::Utc;
+use crate::util::now_rfc3339;
 
 /// Category ordering for qual-below check (higher index = higher category).
 const CAT_ORDER: &[&str] = &["Junior", "Mid", "Senior", "Lead", "Principal"];
@@ -126,6 +126,6 @@ fn alert(
         cage_code: cage_code.map(String::from),
         agency: agency.map(String::from),
         predicate_acts: Some(predicate_acts),
-        timestamp: Some(Utc::now().to_rfc3339()),
+        timestamp: Some(now_rfc3339()),
     }
 }

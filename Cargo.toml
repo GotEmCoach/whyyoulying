@@ -30,7 +30,13 @@ serde_json = "1"
 thiserror = "1.0"
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-chrono = { version = "0.4", features = ["serde"] }
 tempfile = "3"
 exopack = { git = "https://github.com/cochranblock/exopack", optional = true, features = ["triple_sims"] }
 tokio = { version = "1", features = ["full"], optional = true }
+
+[profile.release]
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = 'abort'
+strip = true

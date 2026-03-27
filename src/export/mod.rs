@@ -77,7 +77,7 @@ pub fn fbi_case_opening(alerts: &[Alert]) -> FbiCaseOpening {
 
     FbiCaseOpening {
         document_type: "FBI Case Opening - Factual Basis".to_string(),
-        generated_at: chrono::Utc::now().to_rfc3339(),
+        generated_at: crate::util::now_rfc3339(),
         factual_basis,
         predicate_acts_summary: predicate_summary,
     }
@@ -87,7 +87,7 @@ pub fn referral_package(alerts: &[Alert]) -> ReferralPackage {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
 
-    let generated_at = chrono::Utc::now().to_rfc3339();
+    let generated_at = crate::util::now_rfc3339();
     let audit_entries: Vec<AuditEntry> = alerts
         .iter()
         .enumerate()

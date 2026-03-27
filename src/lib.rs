@@ -10,6 +10,7 @@ pub mod data;
 pub mod detect;
 pub mod export;
 pub mod types;
+pub mod util;
 
 pub use config::Config;
 pub use data::{Dataset, Ingest};

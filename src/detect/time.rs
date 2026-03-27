@@ -5,7 +5,7 @@
 
 use crate::data::Dataset;
 use crate::types::{Alert, FraudType, PredicateAct, RuleId};
-use chrono::Utc;
+use crate::util::now_rfc3339;
 use std::collections::HashMap;
 
 pub struct TimeDetector {
@@ -59,7 +59,7 @@ impl TimeDetector {
                     cage_code,
                     agency,
                     predicate_acts: Some(vec![PredicateAct::FalseClaims]),
-                    timestamp: Some(Utc::now().to_rfc3339()),
+                    timestamp: Some(now_rfc3339()),
                 });
             }
         }

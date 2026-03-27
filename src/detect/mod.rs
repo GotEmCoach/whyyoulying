@@ -189,6 +189,101 @@ mod tests {
     }
 
     #[test]
+    fn labor_detector_rate_overbill() {
+        let mut ds = Dataset::default();
+        ds.contracts.insert(
+            "C1".into(),
+            Contract {
+                id: "C1".into(),
+                labor_cats: [("Senior".to_string(), "BA".to_string())].into_iter().collect(),
+                labor_rates: [("Senior".to_string(), 100.0)].into_iter().collect(),
+                ..Default::default()
+            },
+        );
+        ds.labor_charges.push(LaborCharge {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            labor_cat: "Senior".into(),
+            hours: 40.0,
+            rate: Some(120.0), // 20% over contract rate of 100
+        });
+        let det = LaborDetector::new(15.0);
+        let alerts = det.run(&ds);
+        assert!(alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("LaborRateOverbill")));
+    }
+
+    #[test]
+    fn labor_detector_rate_under_threshold_no_alert() {
+        let mut ds = Dataset::default();
+        ds.contracts.insert(
+            "C1".into(),
+            Contract {
+                id: "C1".into(),
+                labor_cats: [("Senior".to_string(), "BA".to_string())].into_iter().collect(),
+                labor_rates: [("Senior".to_string(), 100.0)].into_iter().collect(),
+                ..Default::default()
+            },
+        );
+        ds.labor_charges.push(LaborCharge {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            labor_cat: "Senior".into(),
+            hours: 40.0,
+            rate: Some(110.0), // 10% over — under 15% threshold
+        });
+        let det = LaborDetector::new(15.0);
+        let alerts = det.run(&ds);
+        assert!(!alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("LaborRateOverbill")));
+    }
+
+    #[test]
+    fn labor_detector_rate_no_contract_rate_no_alert() {
+        let mut ds = Dataset::default();
+        ds.contracts.insert(
+            "C1".into(),
+            Contract {
+                id: "C1".into(),
+                labor_cats: [("Senior".to_string(), "BA".to_string())].into_iter().collect(),
+                ..Default::default() // no labor_rates
+            },
+        );
+        ds.labor_charges.push(LaborCharge {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            labor_cat: "Senior".into(),
+            hours: 40.0,
+            rate: Some(999.0),
+        });
+        let det = LaborDetector::new(15.0);
+        let alerts = det.run(&ds);
+        assert!(!alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("LaborRateOverbill")));
+    }
+
+    #[test]
+    fn labor_detector_rate_no_charge_rate_no_alert() {
+        let mut ds = Dataset::default();
+        ds.contracts.insert(
+            "C1".into(),
+            Contract {
+                id: "C1".into(),
+                labor_cats: [("Senior".to_string(), "BA".to_string())].into_iter().collect(),
+                labor_rates: [("Senior".to_string(), 100.0)].into_iter().collect(),
+                ..Default::default()
+            },
+        );
+        ds.labor_charges.push(LaborCharge {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            labor_cat: "Senior".into(),
+            hours: 40.0,
+            rate: None, // no rate on charge
+        });
+        let det = LaborDetector::new(15.0);
+        let alerts = det.run(&ds);
+        assert!(!alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("LaborRateOverbill")));
+    }
+
+    #[test]
     fn ghost_detector_not_verified() {
         let mut ds = Dataset::default();
         let c = contract("C1", None, None);

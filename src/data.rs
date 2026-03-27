@@ -148,6 +148,7 @@ mod tests {
                 cage_code: Some("1X".into()),
                 agency: Some("DoD".into()),
                 labor_cats: HashMap::new(),
+                ..Default::default()
             },
         );
         assert!(ds.contract_by_id("C1").is_some());
@@ -164,6 +165,7 @@ mod tests {
                 cage_code: None,
                 agency: None,
                 labor_cats: HashMap::new(),
+                ..Default::default()
             },
         );
         let ids = ds.nexus_contract_ids(None, None);
@@ -181,6 +183,7 @@ mod tests {
                 cage_code: None,
                 agency: Some("DoD".into()),
                 labor_cats: HashMap::new(),
+                ..Default::default()
             },
         );
         ds.contracts.insert(
@@ -190,6 +193,7 @@ mod tests {
                 cage_code: None,
                 agency: Some("GSA".into()),
                 labor_cats: HashMap::new(),
+                ..Default::default()
             },
         );
         let ids = ds.nexus_contract_ids(Some("DoD"), None);
@@ -207,6 +211,7 @@ mod tests {
                 cage_code: Some("1ABC".into()),
                 agency: None,
                 labor_cats: HashMap::new(),
+                ..Default::default()
             },
         );
         let ids = ds.nexus_contract_ids(None, Some("1ABC"));
@@ -223,6 +228,7 @@ mod tests {
                 cage_code: None,
                 agency: Some("DoD".into()),
                 labor_cats: HashMap::new(),
+                ..Default::default()
             },
         );
         let ids = ds.nexus_contract_ids(Some("dod"), None);
@@ -239,6 +245,7 @@ mod tests {
                 cage_code: Some("1X".into()),
                 agency: Some("DoD".into()),
                 labor_cats: HashMap::new(),
+                ..Default::default()
             },
         );
         ds.contracts.insert(
@@ -248,6 +255,7 @@ mod tests {
                 cage_code: Some("2Y".into()),
                 agency: Some("DoD".into()),
                 labor_cats: HashMap::new(),
+                ..Default::default()
             },
         );
         let ids = ds.nexus_contract_ids(Some("DoD"), Some("1X"));
@@ -272,6 +280,7 @@ mod tests {
                 cage_code: None,
                 agency: None,
                 labor_cats: HashMap::new(),
+                ..Default::default()
             },
         );
         let ids = ds.nexus_contract_ids(Some("DoD"), None);

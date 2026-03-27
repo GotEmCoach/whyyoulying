@@ -28,6 +28,7 @@ impl fmt::Display for FraudType {
 pub enum RuleId {
     LaborVariance,
     LaborQualBelow,
+    LaborRateOverbill,
     GhostNoEmployee,
     GhostNotVerified,
     GhostBilledNotPerformed,
@@ -38,6 +39,7 @@ impl fmt::Display for RuleId {
         f.write_str(match self {
             RuleId::LaborVariance => "LABOR_VARIANCE",
             RuleId::LaborQualBelow => "LABOR_QUAL_BELOW",
+            RuleId::LaborRateOverbill => "LABOR_RATE_OVERBILL",
             RuleId::GhostNoEmployee => "GHOST_NO_EMPLOYEE",
             RuleId::GhostNotVerified => "GHOST_NOT_VERIFIED",
             RuleId::GhostBilledNotPerformed => "GHOST_BILLED_NOT_PERFORMED",
@@ -85,6 +87,9 @@ pub struct Contract {
     pub agency: Option<String>,
     /// Map labor_cat → min qualification level.
     pub labor_cats: std::collections::HashMap<String, String>,
+    /// Contracted rate per labor category ($/hr). Used for rate overbilling detection.
+    #[serde(default)]
+    pub labor_rates: std::collections::HashMap<String, f64>,
 }
 
 /// Employee qualifications vs charged category.

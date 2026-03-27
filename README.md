@@ -80,7 +80,7 @@ cargo run --bin whyyoulying-test --features tests
 
 Place JSON files in `--data-path`:
 
-- `contracts.json` — id, cage_code, agency, labor_cats
+- `contracts.json` — id, cage_code, agency, labor_cats, labor_rates
 - `employees.json` — id, quals, labor_cat_min, verified
 - `labor_charges.json` — contract_id, employee_id, labor_cat, hours, rate
 - `billing_records.json` — contract_id, employee_id, billed_hours, billed_cat, period
@@ -95,6 +95,7 @@ See `fixtures/` for examples.
 |------|------|-------------|
 | LABOR_VARIANCE | Labor | Labor category not in contract |
 | LABOR_QUAL_BELOW | Labor | Employee charged above qualification |
+| LABOR_RATE_OVERBILL | Labor | Charged rate exceeds contract rate by > threshold |
 | GHOST_NO_EMPLOYEE | Ghost | Billed employee not in roster |
 | GHOST_NOT_VERIFIED | Ghost | No floorcheck verification |
 | GHOST_BILLED_NOT_PERFORMED | Ghost | Billed hours exceed performed |

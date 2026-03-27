@@ -1,6 +1,6 @@
 //! Labor category fraud detection (Labor Mischarging, Labor Substitution).
 //!
-//! Red flags: budget vs actual variance, employees below min quals.
+//! Red flags: unapproved categories, employees below min quals, rate overbilling.
 
 use crate::data::Dataset;
 use crate::types::{Alert, FraudType, PredicateAct, RuleId};
@@ -47,6 +47,32 @@ impl LaborDetector {
                         c.agency.as_deref(),
                         vec![PredicateAct::FalseClaims],
                     ));
+                }
+            }
+
+            // Rate overbilling: charged rate exceeds contract rate by > threshold_pct
+            if let (Some(c), Some(charged_rate)) = (contract, lc.rate) {
+                if let Some(&contract_rate) = c.labor_rates.get(&lc.labor_cat) {
+                    if contract_rate > 0.0 {
+                        let variance_pct = ((charged_rate - contract_rate) / contract_rate) * 100.0;
+                        if variance_pct > self.threshold_pct {
+                            alerts.push(alert(
+                                RuleId::LaborRateOverbill,
+                                85,
+                                7,
+                                &format!(
+                                    "Rate ${:.2}/hr exceeds contract ${:.2}/hr by {:.1}% (threshold {:.1}%) for {}/{}",
+                                    charged_rate, contract_rate, variance_pct, self.threshold_pct,
+                                    lc.contract_id, lc.labor_cat
+                                ),
+                                Some(&lc.contract_id),
+                                Some(&lc.employee_id),
+                                c.cage_code.as_deref(),
+                                c.agency.as_deref(),
+                                vec![PredicateAct::FalseClaims, PredicateAct::WireFraud],
+                            ));
+                        }
+                    }
                 }
             }
 

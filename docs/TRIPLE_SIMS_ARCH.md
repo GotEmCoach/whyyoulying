@@ -17,7 +17,7 @@
 │ cage_code       │     │ quals[]         │     │ employee_id     │
 │ agency          │     │ labor_cat_min   │     │ labor_cat       │
 │ labor_cats[]    │     │ verified        │     │ hours           │
-│ (proposal/req)  │     │                 │     │ rate            │
+│ labor_rates[]   │     │                 │     │ rate            │
 └────────┬────────┘     └────────┬────────┘     └────────┬────────┘
          │                       │                       │
          └───────────────────────┴───────────────────────┘
@@ -37,7 +37,7 @@
 
 | Entity | Purpose | Key Fields |
 |--------|---------|------------|
-| **Contract** | Proposal/contract labor categories and requirements | id, cage_code, agency, labor_cats (map cat→min_qual) |
+| **Contract** | Proposal/contract labor categories and requirements | id, cage_code, agency, labor_cats (map cat→min_qual), labor_rates (map cat→$/hr) |
 | **Employee** | Employee qualifications vs charged category | id, quals[], labor_cat_min, verified (floorcheck) |
 | **LaborCharge** | Actual labor charged (timesheet/DCAA) | contract_id, employee_id, labor_cat, hours, rate |
 | **BillingRecord** | What was billed to gov | contract_id, employee_id, billed_hours, billed_cat, period |
@@ -46,7 +46,7 @@
 
 | Detector | Primary Inputs | Secondary |
 |----------|----------------|-----------|
-| **LaborDetector** | Contract.labor_cats, Employee.quals, LaborCharge.labor_cat | Config.labor_variance_threshold_pct |
+| **LaborDetector** | Contract.labor_cats, Contract.labor_rates, Employee.quals, LaborCharge.labor_cat, LaborCharge.rate | Config.labor_variance_threshold_pct |
 | **GhostDetector** | Employee (existence), BillingRecord (billed vs performed) | Employee.verified |
 
 ---
@@ -93,6 +93,7 @@
 |---------|----------|-------------|
 | `LABOR_VARIANCE` | LaborDetector | Charged labor category not in contract's approved categories |
 | `LABOR_QUAL_BELOW` | LaborDetector | Employee quals below charged category min |
+| `LABOR_RATE_OVERBILL` | LaborDetector | Charged rate exceeds contract rate by > threshold_pct |
 | `GHOST_NO_EMPLOYEE` | GhostDetector | Billed employee_id not in Employee set |
 | `GHOST_NOT_VERIFIED` | GhostDetector | Billed but no floorcheck verification |
 | `GHOST_BILLED_NOT_PERFORMED` | GhostDetector | Billing record without matching LaborCharge |

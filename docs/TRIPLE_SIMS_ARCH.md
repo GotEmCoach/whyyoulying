@@ -48,6 +48,8 @@
 |----------|----------------|-----------|
 | **LaborDetector** | Contract.labor_cats, Contract.labor_rates, Employee.quals, LaborCharge.labor_cat, LaborCharge.rate | Config.labor_variance_threshold_pct |
 | **GhostDetector** | Employee (existence), BillingRecord (billed vs performed) | Employee.verified |
+| **TimeDetector** | BillingRecord (hours per employee per period) | Config.max_hours_per_period |
+| **DuplicateDetector** | BillingRecord (cross-contract per employee per period) | — |
 
 ---
 
@@ -97,6 +99,8 @@
 | `GHOST_NO_EMPLOYEE` | GhostDetector | Billed employee_id not in Employee set |
 | `GHOST_NOT_VERIFIED` | GhostDetector | Billed but no floorcheck verification |
 | `GHOST_BILLED_NOT_PERFORMED` | GhostDetector | Billing record without matching LaborCharge |
+| `TIME_OVERCHARGE` | TimeDetector | Employee total billed hours in period exceed max_hours_per_period |
+| `DUPLICATE_BILLING` | DuplicateDetector | Same employee billed on 2+ contracts in same period |
 
 ---
 
@@ -158,7 +162,9 @@ src/
 ├── detect/
 │   ├── mod.rs
 │   ├── labor.rs
-│   └── ghost.rs
+│   ├── ghost.rs
+│   ├── time.rs
+│   └── duplicate.rs
 ├── export/
 │   └── mod.rs           # referral_package, fbi_case_opening
 └── bin/

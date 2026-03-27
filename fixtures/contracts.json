@@ -13,5 +13,16 @@
       "Senior": 125.0,
       "Lead": 175.0
     }
+  },
+  {
+    "id": "C2",
+    "cage_code": "1ABC2",
+    "agency": "DoD",
+    "labor_cats": {
+      "Senior": "BA"
+    },
+    "labor_rates": {
+      "Senior": 130.0
+    }
   }
 ]

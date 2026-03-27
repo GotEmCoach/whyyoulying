@@ -99,6 +99,8 @@ See `fixtures/` for examples.
 | GHOST_NO_EMPLOYEE | Ghost | Billed employee not in roster |
 | GHOST_NOT_VERIFIED | Ghost | No floorcheck verification |
 | GHOST_BILLED_NOT_PERFORMED | Ghost | Billed hours exceed performed |
+| TIME_OVERCHARGE | Ghost | Employee total billed hours exceed max per period |
+| DUPLICATE_BILLING | Labor | Same employee billed on 2+ contracts in same period |
 
 ---
 

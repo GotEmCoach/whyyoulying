@@ -32,6 +32,8 @@ pub enum RuleId {
     GhostNoEmployee,
     GhostNotVerified,
     GhostBilledNotPerformed,
+    TimeOvercharge,
+    DuplicateBilling,
 }
 
 impl fmt::Display for RuleId {
@@ -43,6 +45,8 @@ impl fmt::Display for RuleId {
             RuleId::GhostNoEmployee => "GHOST_NO_EMPLOYEE",
             RuleId::GhostNotVerified => "GHOST_NOT_VERIFIED",
             RuleId::GhostBilledNotPerformed => "GHOST_BILLED_NOT_PERFORMED",
+            RuleId::TimeOvercharge => "TIME_OVERCHARGE",
+            RuleId::DuplicateBilling => "DUPLICATE_BILLING",
         })
     }
 }

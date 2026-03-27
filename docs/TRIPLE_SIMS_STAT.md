@@ -10,9 +10,9 @@
 
 | Phase | Count | Description |
 |-------|-------|-------------|
-| cargo test (unit) | 56 | config(11), types(9), data(14), detect(15), export(7) |
+| cargo test (unit) | 67 | config(11), types(9), data(14), detect(26), export(7) |
 | whyyoulying-test f49–f60 | 12 | Unit, TempDir, e2e, self-integration (run, agency, csv, export, empty) |
-| — | **68** | |
+| — | **79** | |
 
 ---
 

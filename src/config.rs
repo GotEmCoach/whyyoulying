@@ -22,10 +22,17 @@ pub struct Config {
     pub filter_agency: Option<String>,
     /// DoD nexus: filter by CAGE code.
     pub filter_cage_code: Option<String>,
+    /// Max billed hours per employee per period before TIME_OVERCHARGE fires.
+    #[serde(default = "default_max_hours_per_period")]
+    pub max_hours_per_period: f64,
 }
 
 fn default_min_confidence() -> u8 {
     50
+}
+
+fn default_max_hours_per_period() -> f64 {
+    176.0
 }
 
 impl Default for Config {
@@ -36,6 +43,7 @@ impl Default for Config {
             min_confidence: 50,
             filter_agency: None,
             filter_cage_code: None,
+            max_hours_per_period: 176.0,
         }
     }
 }

@@ -1,12 +1,16 @@
 //! Fraud detection modules.
 
+pub mod duplicate;
 pub mod ghost;
 pub mod labor;
+pub mod time;
 
 #[cfg(test)]
 mod tests {
+    use super::duplicate::DuplicateDetector;
     use super::labor::LaborDetector;
     use super::ghost::GhostDetector;
+    use super::time::TimeDetector;
     use crate::data::Dataset;
     use crate::types::{Contract, Employee, LaborCharge, BillingRecord};
 
@@ -367,5 +371,212 @@ mod tests {
         let alerts = det.run(&ds);
         assert!(!alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("GhostNotVerified")));
         assert!(!alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("GhostBilledNotPerformed")));
+    }
+
+    // --- TimeDetector tests ---
+
+    #[test]
+    fn time_detector_empty_ds_no_alerts() {
+        let ds = Dataset::default();
+        let det = TimeDetector::new(176.0);
+        assert!(det.run(&ds).is_empty());
+    }
+
+    #[test]
+    fn time_detector_overcharge() {
+        let mut ds = Dataset::default();
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 100.0,
+            billed_cat: "Senior".into(),
+            period: Some("2026-01".into()),
+        });
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C2".into(),
+            employee_id: "E1".into(),
+            billed_hours: 100.0,
+            billed_cat: "Senior".into(),
+            period: Some("2026-01".into()),
+        });
+        let det = TimeDetector::new(176.0);
+        let alerts = det.run(&ds);
+        assert!(alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("TimeOvercharge")));
+    }
+
+    #[test]
+    fn time_detector_under_max_no_alert() {
+        let mut ds = Dataset::default();
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 160.0,
+            billed_cat: "Senior".into(),
+            period: Some("2026-01".into()),
+        });
+        let det = TimeDetector::new(176.0);
+        let alerts = det.run(&ds);
+        assert!(!alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("TimeOvercharge")));
+    }
+
+    #[test]
+    fn time_detector_no_period_skipped() {
+        let mut ds = Dataset::default();
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 999.0,
+            billed_cat: "Senior".into(),
+            period: None,
+        });
+        let det = TimeDetector::new(176.0);
+        assert!(det.run(&ds).is_empty());
+    }
+
+    #[test]
+    fn time_detector_separate_periods_no_cross_contamination() {
+        let mut ds = Dataset::default();
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 160.0,
+            billed_cat: "Senior".into(),
+            period: Some("2026-01".into()),
+        });
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 160.0,
+            billed_cat: "Senior".into(),
+            period: Some("2026-02".into()),
+        });
+        let det = TimeDetector::new(176.0);
+        assert!(det.run(&ds).is_empty());
+    }
+
+    #[test]
+    fn time_detector_high_excess_severity() {
+        let mut ds = Dataset::default();
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 250.0,
+            billed_cat: "Senior".into(),
+            period: Some("2026-01".into()),
+        });
+        let det = TimeDetector::new(176.0);
+        let alerts = det.run(&ds);
+        let a = alerts.iter().find(|a| format!("{:?}", a.rule_id).contains("TimeOvercharge")).unwrap();
+        assert_eq!(a.severity, 8); // excess > 40 hrs
+    }
+
+    // --- DuplicateDetector tests ---
+
+    #[test]
+    fn duplicate_detector_empty_ds_no_alerts() {
+        let ds = Dataset::default();
+        let det = DuplicateDetector::new();
+        assert!(det.run(&ds).is_empty());
+    }
+
+    #[test]
+    fn duplicate_detector_cross_contract() {
+        let mut ds = Dataset::default();
+        ds.contracts.insert(
+            "C1".into(),
+            Contract {
+                id: "C1".into(),
+                cage_code: Some("1X".into()),
+                agency: Some("DoD".into()),
+                ..Default::default()
+            },
+        );
+        ds.contracts.insert(
+            "C2".into(),
+            Contract {
+                id: "C2".into(),
+                ..Default::default()
+            },
+        );
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 40.0,
+            billed_cat: "Senior".into(),
+            period: Some("2026-01".into()),
+        });
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C2".into(),
+            employee_id: "E1".into(),
+            billed_hours: 40.0,
+            billed_cat: "Senior".into(),
+            period: Some("2026-01".into()),
+        });
+        let det = DuplicateDetector::new();
+        let alerts = det.run(&ds);
+        assert!(alerts.iter().any(|a| format!("{:?}", a.rule_id).contains("DuplicateBilling")));
+    }
+
+    #[test]
+    fn duplicate_detector_single_contract_no_alert() {
+        let mut ds = Dataset::default();
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 40.0,
+            billed_cat: "Senior".into(),
+            period: Some("2026-01".into()),
+        });
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 40.0,
+            billed_cat: "Lead".into(),
+            period: Some("2026-01".into()),
+        });
+        let det = DuplicateDetector::new();
+        assert!(det.run(&ds).is_empty());
+    }
+
+    #[test]
+    fn duplicate_detector_different_periods_no_alert() {
+        let mut ds = Dataset::default();
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 40.0,
+            billed_cat: "Senior".into(),
+            period: Some("2026-01".into()),
+        });
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C2".into(),
+            employee_id: "E1".into(),
+            billed_hours: 40.0,
+            billed_cat: "Senior".into(),
+            period: Some("2026-02".into()),
+        });
+        let det = DuplicateDetector::new();
+        assert!(det.run(&ds).is_empty());
+    }
+
+    #[test]
+    fn duplicate_detector_no_period_skipped() {
+        let mut ds = Dataset::default();
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C1".into(),
+            employee_id: "E1".into(),
+            billed_hours: 40.0,
+            billed_cat: "Senior".into(),
+            period: None,
+        });
+        ds.billing_records.push(BillingRecord {
+            contract_id: "C2".into(),
+            employee_id: "E1".into(),
+            billed_hours: 40.0,
+            billed_cat: "Senior".into(),
+            period: None,
+        });
+        let det = DuplicateDetector::new();
+        assert!(det.run(&ds).is_empty());
     }
 }

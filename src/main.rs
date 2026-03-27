@@ -3,7 +3,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use whyyoulying::{Alert, Config, GhostDetector, Ingest, LaborDetector};
+use whyyoulying::{Alert, Config, DuplicateDetector, GhostDetector, Ingest, LaborDetector, TimeDetector};
 
 #[derive(Parser)]
 #[command(name = "whyyoulying")]
@@ -113,22 +113,37 @@ fn run(cli: &Cli) -> Result<i32> {
 
     let labor = LaborDetector::new(config.labor_variance_threshold_pct);
     let ghost = GhostDetector::new();
-    let labor_alerts = labor.run(&ds);
-    let ghost_alerts = ghost.run(&ds);
-    let mut alerts: Vec<Alert> = labor_alerts
+    let time = TimeDetector::new(config.max_hours_per_period);
+    let duplicate = DuplicateDetector::new();
+    let mut alerts: Vec<Alert> = labor.run(&ds)
         .into_iter()
-        .chain(ghost_alerts)
+        .chain(ghost.run(&ds))
+        .chain(time.run(&ds))
+        .chain(duplicate.run(&ds))
         .collect();
 
     let nexus_ids = ds.nexus_contract_ids(
         config.filter_agency.as_deref(),
         config.filter_cage_code.as_deref(),
     );
+    let has_nexus_filter = config.filter_agency.is_some() || config.filter_cage_code.is_some();
     alerts.retain(|a| {
-        a.confidence >= config.min_confidence
-            && a.contract_id
-                .as_ref()
-                .is_none_or(|id| nexus_ids.contains(id.as_str()))
+        if a.confidence < config.min_confidence {
+            return false;
+        }
+        match a.contract_id.as_ref() {
+            Some(id) => nexus_ids.contains(id.as_str()),
+            None if !has_nexus_filter => true,
+            None => {
+                let agency_ok = config.filter_agency.as_ref().is_none_or(|fa| {
+                    a.agency.as_ref().is_some_and(|x| x.eq_ignore_ascii_case(fa))
+                });
+                let cage_ok = config.filter_cage_code.as_ref().is_none_or(|fc| {
+                    a.cage_code.as_ref().is_some_and(|x| x.eq_ignore_ascii_case(fc))
+                });
+                agency_ok && cage_ok
+            }
+        }
     });
 
     match cli.output {
@@ -186,21 +201,37 @@ fn cmd_export_referral(cli: &Cli, path: Option<&std::path::Path>, fbi_format: bo
     let ds = Ingest::load_from_path(&data_path)?;
     let labor = LaborDetector::new(config.labor_variance_threshold_pct);
     let ghost = GhostDetector::new();
-    let mut alerts: Vec<Alert> = labor
-        .run(&ds)
+    let time = TimeDetector::new(config.max_hours_per_period);
+    let duplicate = DuplicateDetector::new();
+    let mut alerts: Vec<Alert> = labor.run(&ds)
         .into_iter()
         .chain(ghost.run(&ds))
+        .chain(time.run(&ds))
+        .chain(duplicate.run(&ds))
         .collect();
 
     let nexus_ids = ds.nexus_contract_ids(
         config.filter_agency.as_deref(),
         config.filter_cage_code.as_deref(),
     );
+    let has_nexus_filter = config.filter_agency.is_some() || config.filter_cage_code.is_some();
     alerts.retain(|a| {
-        a.confidence >= config.min_confidence
-            && a.contract_id
-                .as_ref()
-                .is_none_or(|id| nexus_ids.contains(id.as_str()))
+        if a.confidence < config.min_confidence {
+            return false;
+        }
+        match a.contract_id.as_ref() {
+            Some(id) => nexus_ids.contains(id.as_str()),
+            None if !has_nexus_filter => true,
+            None => {
+                let agency_ok = config.filter_agency.as_ref().is_none_or(|fa| {
+                    a.agency.as_ref().is_some_and(|x| x.eq_ignore_ascii_case(fa))
+                });
+                let cage_ok = config.filter_cage_code.as_ref().is_none_or(|fc| {
+                    a.cage_code.as_ref().is_some_and(|x| x.eq_ignore_ascii_case(fc))
+                });
+                agency_ok && cage_ok
+            }
+        }
     });
 
     let out = if fbi_format {

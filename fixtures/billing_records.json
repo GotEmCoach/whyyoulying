@@ -2,7 +2,7 @@
   {
     "contract_id": "C1",
     "employee_id": "E1",
-    "billed_hours": 40.0,
+    "billed_hours": 160.0,
     "billed_cat": "Senior",
     "period": "2026-01"
   },
@@ -18,6 +18,13 @@
     "employee_id": "E3",
     "billed_hours": 10.0,
     "billed_cat": "Junior",
+    "period": "2026-01"
+  },
+  {
+    "contract_id": "C2",
+    "employee_id": "E1",
+    "billed_hours": 80.0,
+    "billed_cat": "Senior",
     "period": "2026-01"
   }
 ]

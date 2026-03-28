@@ -181,7 +181,7 @@ fn f58() -> bool {
     assert!(p.exists());
     let content = std::fs::read_to_string(&p).unwrap();
     let parsed: serde_json::Value = serde_json::from_str(&content).unwrap();
-    assert!(parsed["s43"].as_str().unwrap().contains("DoD"));
+    assert!(parsed["document_type"].as_str().unwrap().contains("DoD"));
     true
 }
 
@@ -193,7 +193,7 @@ fn f59() -> bool {
     assert!(out.status.code() == Some(0) || out.status.code() == Some(1));
     let content = std::fs::read_to_string(&p).unwrap();
     let parsed: serde_json::Value = serde_json::from_str(&content).unwrap();
-    assert!(parsed["s55"].as_str().unwrap().contains("FBI"));
+    assert!(parsed["document_type"].as_str().unwrap().contains("FBI"));
     true
 }
 

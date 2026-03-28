@@ -10,11 +10,11 @@ use whyyoulying::{Alert, Config, DuplicateDetector, GhostDetector, Ingest, Labor
 #[command(about = "Proactive Labor Category Fraud and Ghost Billing detection")]
 #[command(version)]
 struct Cli {
-    #[arg(long, global = true)]
+    #[arg(long, global = true, help = "Config file path (JSON)")]
     config: Option<PathBuf>,
-    #[arg(long, global = true)]
+    #[arg(long, global = true, help = "Directory with contracts/employees/labor/billing JSON")]
     data_path: Option<PathBuf>,
-    #[arg(long, global = true, value_parser = clap::value_parser!(f64))]
+    #[arg(long, global = true, value_parser = clap::value_parser!(f64), help = "Labor variance threshold 0-100 (default 15)")]
     threshold: Option<f64>,
     #[arg(long, global = true, value_parser = clap::value_parser!(u8).range(0..=100), help = "Min confidence 0-100 (S4 false-positive control)")]
     min_confidence: Option<u8>,
@@ -33,14 +33,14 @@ enum OutputFormat { Json, Csv }
 
 #[derive(Subcommand)]
 enum Commands {
-    /// c1=run. Run labor + ghost detection, output alerts (default)
+    /// Run labor + ghost detection, output alerts (default)
     Run,
-    /// c2=ingest. Load and validate data only
+    /// Load and validate data only
     Ingest {
         #[arg(long)]
         path: Option<PathBuf>,
     },
-    /// c3=export-referral. Export GAGAS referral package or FBI case-opening docs
+    /// Export GAGAS referral package or FBI case-opening docs
     ExportReferral {
         #[arg(long)]
         path: Option<PathBuf>,

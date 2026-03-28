@@ -6,48 +6,71 @@ use serde::Serialize;
 /// t17=ReferralPackage. GAGAS-compliant referral for DoD IG.
 #[derive(Debug, Serialize)]
 pub struct t17 {
+    #[serde(rename = "document_type")]
     pub s43: String,
+    #[serde(rename = "generated_at")]
     pub s44: String,
+    #[serde(rename = "chain_of_custody")]
     pub s45: t18,
+    #[serde(rename = "alert_count")]
     pub s46: usize,
+    #[serde(rename = "alerts")]
     pub s47: Vec<t5>,
+    #[serde(rename = "audit_entries")]
     pub s48: Vec<t19>,
 }
 
 /// t18=ChainOfCustody
 #[derive(Debug, Serialize)]
 pub struct t18 {
+    #[serde(rename = "tool")]
     pub s49: String,
+    #[serde(rename = "version")]
     pub s50: String,
+    #[serde(rename = "each_alert_traced_to_rule")]
     pub s51: bool,
 }
 
 /// t19=AuditEntry
 #[derive(Debug, Serialize)]
 pub struct t19 {
+    #[serde(rename = "rule_id")]
     pub s52: String,
+    #[serde(rename = "alert_index")]
     pub s53: usize,
+    #[serde(rename = "input_hash")]
     pub s54: String,
 }
 
 /// t20=FbiCaseOpening. FBI case-opening per AG Guidelines (F5).
 #[derive(Debug, Serialize)]
 pub struct t20 {
+    #[serde(rename = "document_type")]
     pub s55: String,
+    #[serde(rename = "generated_at")]
     pub s56: String,
+    #[serde(rename = "factual_basis")]
     pub s57: Vec<t21>,
+    #[serde(rename = "predicate_acts_summary")]
     pub s58: std::collections::HashMap<String, usize>,
 }
 
 /// t21=FactualBasis
 #[derive(Debug, Serialize)]
 pub struct t21 {
+    #[serde(rename = "alert_index")]
     pub s59: usize,
+    #[serde(rename = "fraud_type")]
     pub s60: String,
+    #[serde(rename = "summary")]
     pub s61: String,
+    #[serde(rename = "confidence")]
     pub s62: u8,
+    #[serde(rename = "contract_id")]
     pub s63: Option<String>,
+    #[serde(rename = "employee_id")]
     pub s64: Option<String>,
+    #[serde(rename = "predicate_acts")]
     pub s65: Vec<String>,
 }
 

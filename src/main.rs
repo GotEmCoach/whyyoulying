@@ -10,6 +10,9 @@ use whyyoulying::{Alert, Config, DuplicateDetector, GhostDetector, Ingest, Labor
 #[command(about = "Proactive Labor Category Fraud and Ghost Billing detection")]
 #[command(version)]
 struct Cli {
+    /// Dump SPDX SBOM (machine-readable) and exit
+    #[arg(long, global = true)]
+    sbom: bool,
     #[arg(long, global = true, help = "Config file path (JSON)")]
     config: Option<PathBuf>,
     #[arg(long, global = true, help = "Directory with contracts/employees/labor/billing JSON")]
@@ -47,14 +50,26 @@ enum Commands {
         #[arg(long, default_value_t = false, help = "FBI case-opening format (AG Guidelines)")]
         fbi: bool,
     },
+    /// Print federal compliance docs (sbom, security, privacy, fips, cmmc, supply-chain, fedramp, itar, accessibility, federal-use-cases, ssdf, all)
+    Govdocs {
+        /// Document to display
+        doc: Option<String>,
+    },
 }
 
 fn main() {
     let cli = Cli::parse();
+
+    if cli.sbom {
+        print!("{}", live_spdx_sbom());
+        std::process::exit(0);
+    }
+
     let result = match &cli.command {
         None | Some(Commands::Run) => run(&cli),
         Some(Commands::Ingest { path }) => cmd_ingest(&cli, path.as_deref()),
         Some(Commands::ExportReferral { path, fbi }) => cmd_export_referral(&cli, path.as_deref(), *fbi),
+        Some(Commands::Govdocs { doc }) => cmd_govdocs(doc.as_deref()),
     };
     match result {
         Ok(exit_code) => std::process::exit(exit_code),
@@ -197,4 +212,140 @@ fn escape_csv(s: &str) -> String {
     } else {
         s.to_string()
     }
+}
+
+// --- Govdocs: baked-in compliance docs ---
+
+const GOVDOC_SBOM: &str = include_str!("../govdocs/SBOM.md");
+const GOVDOC_SECURITY: &str = include_str!("../govdocs/SECURITY.md");
+const GOVDOC_PRIVACY: &str = include_str!("../govdocs/PRIVACY.md");
+const GOVDOC_FIPS: &str = include_str!("../govdocs/FIPS.md");
+const GOVDOC_CMMC: &str = include_str!("../govdocs/CMMC.md");
+const GOVDOC_SUPPLY_CHAIN: &str = include_str!("../govdocs/SUPPLY_CHAIN.md");
+const GOVDOC_FEDRAMP: &str = include_str!("../govdocs/FedRAMP_NOTES.md");
+const GOVDOC_ITAR: &str = include_str!("../govdocs/ITAR_EAR.md");
+const GOVDOC_ACCESSIBILITY: &str = include_str!("../govdocs/ACCESSIBILITY.md");
+const GOVDOC_SSDF: &str = include_str!("../govdocs/SSDF.md");
+const GOVDOC_FEDERAL: &str = include_str!("../govdocs/FEDERAL_USE_CASES.md");
+const BAKED_CARGO_TOML: &str = include_str!("../Cargo.toml");
+
+fn cmd_govdocs(doc: Option<&str>) -> Result<i32> {
+    match doc {
+        Some("sbom") => println!("{GOVDOC_SBOM}"),
+        Some("security") => println!("{GOVDOC_SECURITY}"),
+        Some("privacy") => println!("{GOVDOC_PRIVACY}"),
+        Some("fips") => println!("{GOVDOC_FIPS}"),
+        Some("cmmc") => println!("{GOVDOC_CMMC}"),
+        Some("supply-chain") => println!("{GOVDOC_SUPPLY_CHAIN}"),
+        Some("fedramp") => println!("{GOVDOC_FEDRAMP}"),
+        Some("itar") => println!("{GOVDOC_ITAR}"),
+        Some("accessibility") => println!("{GOVDOC_ACCESSIBILITY}"),
+        Some("ssdf") => println!("{GOVDOC_SSDF}"),
+        Some("federal-use-cases") => println!("{GOVDOC_FEDERAL}"),
+        Some("all") => {
+            for (name, content) in govdoc_list() {
+                println!("=== {name} ===\n{content}");
+            }
+        }
+        None | Some(_) => {
+            println!("whyyoulying v{} — federal compliance docs\n", env!("CARGO_PKG_VERSION"));
+            println!("Available documents:");
+            for (name, _) in govdoc_list() {
+                println!("  whyyoulying govdocs {name}");
+            }
+            println!("\n  whyyoulying govdocs all         — print all");
+            println!("  whyyoulying --sbom              — machine-readable SPDX SBOM");
+        }
+    }
+    Ok(0)
+}
+
+fn govdoc_list() -> Vec<(&'static str, &'static str)> {
+    vec![
+        ("sbom", GOVDOC_SBOM),
+        ("security", GOVDOC_SECURITY),
+        ("privacy", GOVDOC_PRIVACY),
+        ("fips", GOVDOC_FIPS),
+        ("cmmc", GOVDOC_CMMC),
+        ("supply-chain", GOVDOC_SUPPLY_CHAIN),
+        ("fedramp", GOVDOC_FEDRAMP),
+        ("itar", GOVDOC_ITAR),
+        ("accessibility", GOVDOC_ACCESSIBILITY),
+        ("ssdf", GOVDOC_SSDF),
+        ("federal-use-cases", GOVDOC_FEDERAL),
+    ]
+}
+
+/// Live SPDX 2.3 SBOM generated at runtime from baked Cargo.toml.
+fn live_spdx_sbom() -> String {
+    let pkg_name = env!("CARGO_PKG_NAME");
+    let pkg_version = env!("CARGO_PKG_VERSION");
+    let pkg_license = env!("CARGO_PKG_LICENSE");
+    let timestamp = whyyoulying::util::f20();
+
+    let mut out = format!(
+        "SPDXVersion: SPDX-2.3\n\
+         DataLicense: CC0-1.0\n\
+         SPDXID: SPDXRef-DOCUMENT\n\
+         DocumentName: {pkg_name}-{pkg_version}\n\
+         DocumentNamespace: https://github.com/gotemcoach/{pkg_name}/spdx/{pkg_version}\n\
+         Creator: Tool: whyyoulying-{pkg_version}\n\
+         Created: {timestamp}\n\
+         \n\
+         PackageName: {pkg_name}\n\
+         SPDXID: SPDXRef-Package\n\
+         PackageVersion: {pkg_version}\n\
+         PackageDownloadLocation: https://github.com/gotemcoach/{pkg_name}\n\
+         PackageLicenseConcluded: {pkg_license}\n\
+         PackageLicenseDeclared: {pkg_license}\n\
+         FilesAnalyzed: false\n\n"
+    );
+
+    // Parse deps from baked Cargo.toml
+    let mut in_deps = false;
+    for line in BAKED_CARGO_TOML.lines() {
+        let trimmed = line.trim();
+        if trimmed == "[dependencies]" {
+            in_deps = true;
+            continue;
+        }
+        if trimmed.starts_with('[') && in_deps {
+            break;
+        }
+        if !in_deps {
+            continue;
+        }
+        // Parse: name = { version = "X", ... } or name = "X"
+        if let Some((name, rest)) = trimmed.split_once('=') {
+            let name = name.trim();
+            let rest = rest.trim();
+            // Skip optional deps (test-only)
+            if rest.contains("optional = true") {
+                continue;
+            }
+            let version = if rest.starts_with('"') {
+                rest.trim_matches('"')
+            } else if rest.contains("version") {
+                rest.split("version")
+                    .nth(1)
+                    .and_then(|s| s.split('"').nth(1))
+                    .unwrap_or("?")
+            } else {
+                "?"
+            };
+            let spdx_id = format!("SPDXRef-Crate-{name}");
+            out.push_str(&format!(
+                "PackageName: {name}\n\
+                 SPDXID: {spdx_id}\n\
+                 PackageVersion: {version}\n\
+                 PackageDownloadLocation: https://crates.io/crates/{name}\n\
+                 PackageLicenseConcluded: MIT OR Apache-2.0\n\
+                 PackageLicenseDeclared: MIT OR Apache-2.0\n\
+                 FilesAnalyzed: false\n\
+                 \n\
+                 Relationship: SPDXRef-Package DEPENDS_ON {spdx_id}\n\n"
+            ));
+        }
+    }
+    out
 }

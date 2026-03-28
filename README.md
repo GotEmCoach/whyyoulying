@@ -111,3 +111,18 @@ See `fixtures/` for examples.
 - [TRIPLE_SIMS_ARCH](docs/TRIPLE_SIMS_ARCH.md) — Domain model, pipeline
 - [TRIPLE_SIMS_STAT](docs/TRIPLE_SIMS_STAT.md) — Test coverage stats
 - [protocol_map](docs/protocol_map.md) — Protocol abbreviations and commands
+- [compression_map](docs/compression_map.md) — P13 tokenization map
+
+### Federal Compliance (govdocs/)
+
+- [SBOM](govdocs/SBOM.md) — Software Bill of Materials (EO 14028)
+- [SSDF](govdocs/SSDF.md) — NIST SP 800-218 compliance
+- [SECURITY](govdocs/SECURITY.md) — Security posture
+- [PRIVACY](govdocs/PRIVACY.md) — Privacy impact assessment
+- [FIPS](govdocs/FIPS.md) — FIPS 140-2/3 status
+- [CMMC](govdocs/CMMC.md) — CMMC Level 1-2 practices
+- [SUPPLY_CHAIN](govdocs/SUPPLY_CHAIN.md) — Supply chain integrity
+- [FedRAMP_NOTES](govdocs/FedRAMP_NOTES.md) — FedRAMP applicability
+- [ITAR_EAR](govdocs/ITAR_EAR.md) — Export control classification
+- [ACCESSIBILITY](govdocs/ACCESSIBILITY.md) — Section 508 compliance
+- [FEDERAL_USE_CASES](govdocs/FEDERAL_USE_CASES.md) — Agency use cases

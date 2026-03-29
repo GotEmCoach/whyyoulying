@@ -13,6 +13,8 @@ pub mod detect;
 pub mod export;
 pub mod types;
 pub mod util;
+#[cfg(target_os = "android")]
+pub mod android_jni;
 
 pub use config::t1 as Config;
 pub use data::{t3 as Dataset, t4 as Ingest};

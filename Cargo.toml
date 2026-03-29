@@ -17,6 +17,7 @@ tests = ["exopack", "dep:tokio"]
 [lib]
 name = "whyyoulying"
 path = "src/lib.rs"
+crate-type = ["lib", "cdylib"]
 
 [[bin]]
 name = "whyyoulying"

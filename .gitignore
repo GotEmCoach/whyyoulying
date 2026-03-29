@@ -28,3 +28,9 @@ target
 
 # Claude Code worktrees
 .claude/worktrees/
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/app/src/main/jniLibs/
+release/

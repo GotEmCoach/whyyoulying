@@ -16,7 +16,7 @@ public class MainActivity extends Activity {
 
     static {
         try {
-            System.loadLibrary("whyyoulying_android");
+            System.loadLibrary("whyyoulying");
         } catch (UnsatisfiedLinkError e) {
             // JNI lib not available — fall back to baked HTML
         }

@@ -6,6 +6,9 @@ default-run = "whyyoulying"
 description = "Proactive detection of Labor Category Fraud and Ghost Billing"
 license = "Unlicense"
 repository = "https://github.com/gotemcoach/whyyoulying"
+readme = "README.md"
+keywords = ["fraud-detection", "dod", "labor-category", "ghost-billing", "inspector-general"]
+categories = ["command-line-utilities"]
 
 [features]
 default = []
@@ -31,7 +34,7 @@ thiserror = "1.0"
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 tempfile = "3"
-exopack = { git = "https://github.com/cochranblock/exopack", optional = true, features = ["triple_sims"] }
+exopack = { version = "0.1", git = "https://github.com/cochranblock/exopack", optional = true, features = ["triple_sims"] }
 tokio = { version = "1", features = ["full"], optional = true }
 
 [profile.release]

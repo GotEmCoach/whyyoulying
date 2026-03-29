@@ -50,6 +50,12 @@ enum Commands {
         #[arg(long, default_value_t = false, help = "FBI case-opening format (AG Guidelines)")]
         fbi: bool,
     },
+    /// Run fraud detection demo against baked-in sample contracts
+    Demo {
+        /// Output format: text (default), json, html
+        #[arg(long, default_value = "text")]
+        format: String,
+    },
     /// Print federal compliance docs (sbom, security, privacy, fips, cmmc, supply-chain, fedramp, itar, accessibility, federal-use-cases, ssdf, all)
     Govdocs {
         /// Document to display
@@ -69,6 +75,7 @@ fn main() {
         None | Some(Commands::Run) => run(&cli),
         Some(Commands::Ingest { path }) => cmd_ingest(&cli, path.as_deref()),
         Some(Commands::ExportReferral { path, fbi }) => cmd_export_referral(&cli, path.as_deref(), *fbi),
+        Some(Commands::Demo { format }) => cmd_demo(format),
         Some(Commands::Govdocs { doc }) => cmd_govdocs(doc.as_deref()),
     };
     match result {
@@ -204,6 +211,16 @@ fn cmd_export_referral(cli: &Cli, path: Option<&std::path::Path>, fbi_format: bo
         println!("{out}");
     }
     Ok(if alerts.is_empty() { 0 } else { 1 })
+}
+
+fn cmd_demo(format: &str) -> Result<i32> {
+    let (ds, alerts) = whyyoulying::demo::run_demo();
+    match format {
+        "json" => println!("{}", serde_json::to_string_pretty(&alerts)?),
+        "html" => print!("{}", whyyoulying::demo::format_html(&ds, &alerts)),
+        _ => print!("{}", whyyoulying::demo::format_text(&ds, &alerts)),
+    }
+    Ok(0)
 }
 
 fn escape_csv(s: &str) -> String {

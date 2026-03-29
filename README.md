@@ -39,7 +39,10 @@ flowchart LR
 # Build
 cargo build --release
 
-# Run detection on sample data
+# Run fraud detection demo against sample contracts
+cargo run --release -- demo
+
+# Run detection on your own data
 cargo run --release -- --data-path fixtures run
 
 # Run test suite (f49–f60)

@@ -8,6 +8,7 @@
 pub mod tests;
 pub mod config;
 pub mod data;
+pub mod demo;
 pub mod detect;
 pub mod export;
 pub mod types;

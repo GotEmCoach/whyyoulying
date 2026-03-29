@@ -33,6 +33,27 @@ flowchart LR
 
 ---
 
+## Supported Platforms
+
+| Target | Arch | Status | Size |
+|--------|------|--------|------|
+| macOS ARM | aarch64-apple-darwin | **Release binary** | 636 KB |
+| macOS Intel | x86_64-apple-darwin | **Release binary** | 687 KB |
+| Linux x86_64 | x86_64-unknown-linux-gnu | **Release binary** | 783 KB |
+| Linux ARM64 | aarch64-unknown-linux-gnu | Cross (needs `cross`) | — |
+| Linux ARM32 | armv7-unknown-linux-gnueabihf | Cross (needs `cross`) | — |
+| Windows x64 | x86_64-pc-windows-gnu | Cross (needs `cross`) | — |
+| FreeBSD x64 | x86_64-unknown-freebsd | Cross (needs `cross`) | — |
+| RISC-V 64 | riscv64gc-unknown-linux-gnu | Cross (needs `cross`) | — |
+| IBM POWER | powerpc64le-unknown-linux-gnu | Cross (needs `cross`) | — |
+| iOS | aarch64-apple-ios | Library only | — |
+| Android | aarch64-linux-android | JNI lib (needs NDK) | — |
+| WebAssembly | wasm32-unknown-unknown | Library only | — |
+
+Build all: `./scripts/build-all-targets.sh`
+
+---
+
 ## Quick Start
 
 ```bash

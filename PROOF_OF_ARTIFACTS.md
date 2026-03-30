@@ -1,17 +1,18 @@
 # Proof of Artifacts — whyyoulying
 
-Verifiable metrics from the current build. Updated 2026-03-27.
+Verifiable metrics from the current build. Updated 2026-03-30.
 
-## Binary
+## Binaries
 
-| Metric | Value |
-|--------|-------|
-| Release binary | 586,176 bytes (572 KB) |
-| Target | aarch64-apple-darwin (ARM) |
-| Profile | opt-level=z, lto=true, codegen-units=1, panic=abort, strip=true |
-| Deps removed | chrono (replaced with 30-line std::time utility) |
-| Previous size | 1,331,360 bytes (1.3 MB) |
-| Reduction | 56% |
+| Target | Size | Notes |
+|--------|------|-------|
+| aarch64-apple-darwin (macOS ARM) | 635,920 bytes (621 KB) | Primary |
+| x86_64-apple-darwin (macOS Intel) | 687,264 bytes (671 KB) | Cross-compiled |
+| x86_64-unknown-linux-gnu | 782,528 bytes (764 KB) | Built on st |
+| Android AAB | 218,413 bytes (213 KB) | Rust JNI + WebView |
+
+Release profile: opt-level=z, lto=true, codegen-units=1, panic=abort, strip=true.
+Original size (pre-optimization): 1,331,360 bytes. Reduction: 52%.
 
 ## Test Results
 
@@ -48,10 +49,10 @@ Verifiable metrics from the current build. Updated 2026-03-27.
 
 | Metric | Value |
 |--------|-------|
-| Lines of Rust | 3,025 |
-| Source files | 15 (.rs) |
-| Public functions | 21 |
-| Public types | 21 |
+| Lines of Rust | 2,603 |
+| Source files | 16 (.rs) |
+| Public functions | 28 |
+| Public types | 22 |
 | Public fields | 65 |
 | Detection rules | 8 |
 | Direct dependencies | 6 (release) |

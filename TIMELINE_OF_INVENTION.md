@@ -31,3 +31,19 @@ Chronological record of every commit. Dates and hashes from git log.
 | 070cbdc | Kova P13 compression: tokenize all public symbols. 20 functions, 21 types, 65 fields, 14 enum variants. compression_map.md. Serde wire format preserved |
 | ac7e648 | User story analysis (10-section walkthrough, score 6.2/10). Fix 3 bugs: export serde field names, help text P13 leaks, missing flag descriptions |
 | 5843124 | Federal compliance: 11 govdocs (SBOM, SSDF, SECURITY, PRIVACY, FIPS, FedRAMP, CMMC, ITAR/EAR, ACCESSIBILITY, SUPPLY_CHAIN, FEDERAL_USE_CASES) |
+| 1ef93e7 | Add TIMELINE_OF_INVENTION and PROOF_OF_ARTIFACTS |
+
+## 2026-03-28
+
+| Hash | Description |
+|------|-------------|
+| 5f471cb | Add govdocs subcommand + --sbom flag. Binary serves its own compliance docs at runtime via include_str!. Live SPDX 2.3 SBOM from baked Cargo.toml |
+
+## 2026-03-29
+
+| Hash | Description |
+|------|-------------|
+| 57eef26 | Add demo subcommand. 3 baked-in contracts (Acme Defense, Pinnacle Systems, Ironclad Construction). Text/JSON/HTML reports with fraud $ estimates and legal predicates |
+| 4803098 | Android project + multi-arch. JNI bridge, WebView wrapper, org.cochranblock.whyyoulying. macOS ARM + Linux x86_64 release binaries |
+| 4c343d3 | Multi-arch build script. 12 targets: native (macOS ARM/Intel, iOS, WASM), remote (Linux x86_64 via st), cross (6 targets via docker). scripts/build-all-targets.sh |
+| 46d9f2c | Build real AAB (213KB). Rust .so via cargo-ndk + Gradle bundleRelease. API 35, JDK 17. Uploaded to GitHub release v0.2.0 |

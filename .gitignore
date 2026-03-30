@@ -26,6 +26,17 @@ target
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# OS junk
+.DS_Store
+thumbs.db
+
+# Secrets
+.env
+*.jks
+
+# Logs
+*.log
+
 # Claude Code worktrees
 .claude/worktrees/
 android/.gradle/

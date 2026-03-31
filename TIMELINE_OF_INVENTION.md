@@ -47,3 +47,9 @@ Chronological record of every commit. Dates and hashes from git log.
 | 4803098 | Android project + multi-arch. JNI bridge, WebView wrapper, org.cochranblock.whyyoulying. macOS ARM + Linux x86_64 release binaries |
 | 4c343d3 | Multi-arch build script. 12 targets: native (macOS ARM/Intel, iOS, WASM), remote (Linux x86_64 via st), cross (6 targets via docker). scripts/build-all-targets.sh |
 | 46d9f2c | Build real AAB (213KB). Rust .so via cargo-ndk + Gradle bundleRelease. API 35, JDK 17. Uploaded to GitHub release v0.2.0 |
+
+## 2026-03-30
+
+| Hash | Description |
+|------|-------------|
+| 7a7a8cc | Polish pass. Updated TOI/POA with correct metrics (binary 636KB, LOC 2603, 16 src files, 28 pub fns). Gitignore hardened (.DS_Store, .env, *.jks, *.log). Removed empty tests/ dir and duplicate android/.gitignore |

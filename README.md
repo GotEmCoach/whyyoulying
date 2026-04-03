@@ -166,6 +166,7 @@ All public symbols are P13 compressed per [compression_map](docs/compression_map
 - [TRIPLE_SIMS_STAT](docs/TRIPLE_SIMS_STAT.md) — Test coverage stats
 - [protocol_map](docs/protocol_map.md) — Protocol abbreviations
 - [compression_map](docs/compression_map.md) — P13 tokenization map
+- [TINY_AI_OPPORTUNITIES](docs/TINY_AI_OPPORTUNITIES.md) — P23: 7 sub-100K param models for on-device fraud detection
 
 ### Federal Compliance (govdocs/)
 

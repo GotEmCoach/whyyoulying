@@ -81,6 +81,21 @@ Original size (pre-optimization): 1,331,360 bytes. Reduction: 52%.
 | CLI commands (c1-c3) | 3 |
 | Total symbols | 124 |
 
+## P23 Tiny AI (Planned)
+
+| Model | Params | Size (quantized) | Purpose |
+|-------|--------|-------------------|---------|
+| Labor Cat Normalizer | 15K | ~5 KB | Fix silent E4/E5 string match failures |
+| Confidence Calibrator | 5K | ~2 KB | Context-aware confidence scores |
+| Materiality Estimator | 3K | ~1 KB | Rate estimation when contract data missing |
+| Period Anomaly Detector | 8K | ~3 KB | Catch sub-threshold billing escalation |
+| Entity Resolution | 10K | ~4 KB | Fuzzy employee ID matching |
+| Predicate Act Router | 4K | ~2 KB | Context-aware FBI case routing |
+| Narrative Generator | 50K | ~15 KB | Court-ready prose from alert data |
+| **Total** | **95K** | **~32 KB** | Binary impact: 621 KB + 32 KB = ~653 KB |
+
+See [TINY_AI_OPPORTUNITIES](docs/TINY_AI_OPPORTUNITIES.md) for full spec.
+
 ## Detection Rules
 
 | # | Rule | Type | Since |

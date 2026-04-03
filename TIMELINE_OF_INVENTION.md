@@ -60,3 +60,10 @@ Chronological record of every commit. Dates and hashes from git log.
 | Hash | Description |
 |------|-------------|
 | 7ad6a82 | README: accurate metrics, full subcommand docs (demo, govdocs, --sbom), fix architecture diagram (4 detectors), add code metrics section, fix doc links |
+| fddbd1a | Docs: cochranblock.org cross-linking, attribution headers in all 16 .rs files, fix stale binary size in SUPPLY_CHAIN.md |
+
+## 2026-04-03
+
+| Hash | Description |
+|------|-------------|
+| (this) | P23 Tiny AI Opportunities: 7 sub-100K param models (95K total, ~32 KB quantized). Labor cat normalizer, confidence calibrator, materiality estimator, period anomaly detector, entity resolution, predicate act router, narrative generator |

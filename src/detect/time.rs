@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Time overcharging detection. P13 compressed.
 //!
 //! Red flag: employee total billed hours in a period exceed max.

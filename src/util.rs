@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Shared utilities. P13 compressed.
 
 use std::time::SystemTime;

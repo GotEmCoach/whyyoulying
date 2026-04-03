@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Proactive detection of Labor Category Fraud and Ghost Billing. P13 compressed.
 #![allow(non_camel_case_types)] // P13 compression: t+num type names
 //!

@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Fraud detection modules. P13 compressed.
 
 pub mod duplicate;

@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Core types for fraud detection. P13 compressed.
 //!
 //! Domain model per TRIPLE_SIMS_ARCH.md. See docs/compression_map.md.

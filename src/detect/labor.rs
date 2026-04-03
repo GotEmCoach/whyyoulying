@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Labor category fraud detection. P13 compressed.
 //!
 //! Red flags: unapproved categories, employees below min quals, rate overbilling.

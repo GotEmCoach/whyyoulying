@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! whyyoulying CLI — proactive labor category and ghost billing detection. P13 compressed.
 
 use anyhow::Result;

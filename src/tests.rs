@@ -1,4 +1,5 @@
-//! f49–f60 self-eval. Only compiled with tests feature. P13 compressed.
+// Unlicense — cochranblock.org
+//! f49-f60 self-eval. Only compiled with tests feature. P13 compressed.
 
 use std::path::PathBuf;
 use std::process::Command;

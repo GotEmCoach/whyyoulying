@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Referral export (GAGAS) and FBI case-opening. P13 compressed.
 
 use crate::types::t5;

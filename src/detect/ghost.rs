@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Ghost billing detection. P13 compressed.
 //!
 //! Red flags: unexplained employee ID gaps, billed-but-not-performed.

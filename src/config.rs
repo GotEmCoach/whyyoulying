@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Configuration for data sources and detection thresholds. P13 compressed.
 
 use anyhow::{Context, Result};

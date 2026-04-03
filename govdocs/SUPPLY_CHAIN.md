@@ -21,7 +21,7 @@ Builds are reproducible from the same lockfile + Rust toolchain version.
 
 - Release binary is statically linked (no dynamic library dependencies beyond system libc).
 - `strip = true` removes debug symbols. Binary contains no source paths.
-- Binary size: 586,176 bytes (572 KB). Minimal attack surface.
+- Binary size: 635,920 bytes (621 KB). Minimal attack surface.
 
 ## No Vendored Binaries
 

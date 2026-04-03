@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! JNI bridge for Android. Exposes demo report + SBOM to Java/WebView.
 
 #[cfg(target_os = "android")]

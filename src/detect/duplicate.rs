@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Duplicate/cross-contract billing detection. P13 compressed.
 //!
 //! Red flag: same employee billed on 2+ contracts in the same period.

@@ -182,3 +182,7 @@ All compliance docs are baked into the binary and available at runtime via `whyy
 - [ITAR_EAR](govdocs/ITAR_EAR.md) — Export control classification
 - [ACCESSIBILITY](govdocs/ACCESSIBILITY.md) — Section 508 compliance
 - [FEDERAL_USE_CASES](govdocs/FEDERAL_USE_CASES.md) — Agency use cases
+
+---
+
+Built by [cochranblock.org](https://cochranblock.org) — The Cochran Block. Unlicense (public domain).

@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Demo mode: baked-in sample contracts with embedded fraud patterns.
 //! Sales tool for federal investigators. P13 compressed.
 

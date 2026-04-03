@@ -1,3 +1,4 @@
+// Unlicense — cochranblock.org
 //! Data ingestion and normalization. P13 compressed.
 
 use crate::config::t1;

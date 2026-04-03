@@ -53,3 +53,10 @@ Chronological record of every commit. Dates and hashes from git log.
 | Hash | Description |
 |------|-------------|
 | 7a7a8cc | Polish pass. Updated TOI/POA with correct metrics (binary 636KB, LOC 2603, 16 src files, 28 pub fns). Gitignore hardened (.DS_Store, .env, *.jks, *.log). Removed empty tests/ dir and duplicate android/.gitignore |
+| 57f799e | TOI: add 2026-03-30 polish pass commit (7a7a8cc) |
+
+## 2026-04-02
+
+| Hash | Description |
+|------|-------------|
+| 7ad6a82 | README: accurate metrics, full subcommand docs (demo, govdocs, --sbom), fix architecture diagram (4 detectors), add code metrics section, fix doc links |

@@ -8,28 +8,27 @@ Proactive detection of **Labor Category Fraud** and **Ghost Billing** for DoD IG
 
 Per DoDI 5505.02/03, DoD OIG Fraud Scenarios, and Attorney General Guidelines.
 
+Single binary. 6 dependencies. 621 KB. 8 detection rules. 67 unit tests. Zero external services.
+
 ---
 
-## Proof of Artifacts
-
-*Wire diagrams and sample output for quick review.*
-
-### Wire / Architecture
+## Architecture
 
 ```mermaid
 flowchart LR
     Data[fixtures/] --> Ingest[ingest]
     Ingest --> Run[run]
-    Run --> Detectors[Labor + Ghost detectors]
-    Detectors --> Alerts[Alerts]
-    Run --> Export[export-referral]
+    Run --> LD[LaborDetector]
+    Run --> GD[GhostDetector]
+    Run --> TD[TimeDetector]
+    Run --> DD[DuplicateDetector]
+    LD --> Alerts[Alerts]
+    GD --> Alerts
+    TD --> Alerts
+    DD --> Alerts
+    Alerts --> Export[export-referral]
+    Alerts --> FBI[FBI case-opening]
 ```
-
-### Screenshots
-
-| View | Description |
-|------|-------------|
-| Terminal | `cargo run -- --data-path fixtures run` — sample output |
 
 ---
 
@@ -37,9 +36,10 @@ flowchart LR
 
 | Target | Arch | Status | Size |
 |--------|------|--------|------|
-| macOS ARM | aarch64-apple-darwin | **Release binary** | 636 KB |
-| macOS Intel | x86_64-apple-darwin | **Release binary** | 687 KB |
-| Linux x86_64 | x86_64-unknown-linux-gnu | **Release binary** | 783 KB |
+| macOS ARM | aarch64-apple-darwin | Release binary | 621 KB |
+| macOS Intel | x86_64-apple-darwin | Release binary | 671 KB |
+| Linux x86_64 | x86_64-unknown-linux-gnu | Release binary | 764 KB |
+| Android | aarch64-linux-android | AAB (JNI + WebView) | 213 KB |
 | Linux ARM64 | aarch64-unknown-linux-gnu | Cross (needs `cross`) | — |
 | Linux ARM32 | armv7-unknown-linux-gnueabihf | Cross (needs `cross`) | — |
 | Windows x64 | x86_64-pc-windows-gnu | Cross (needs `cross`) | — |
@@ -47,7 +47,6 @@ flowchart LR
 | RISC-V 64 | riscv64gc-unknown-linux-gnu | Cross (needs `cross`) | — |
 | IBM POWER | powerpc64le-unknown-linux-gnu | Cross (needs `cross`) | — |
 | iOS | aarch64-apple-ios | Library only | — |
-| Android | aarch64-linux-android | JNI lib (needs NDK) | — |
 | WebAssembly | wasm32-unknown-unknown | Library only | — |
 
 Build all: `./scripts/build-all-targets.sh`
@@ -60,13 +59,22 @@ Build all: `./scripts/build-all-targets.sh`
 # Build
 cargo build --release
 
-# Run fraud detection demo against sample contracts
+# Run fraud detection demo (baked-in sample contracts)
 cargo run --release -- demo
 
 # Run detection on your own data
 cargo run --release -- --data-path fixtures run
 
-# Run test suite (f49–f60)
+# Export FBI case-opening document
+cargo run --release -- --data-path fixtures export-referral --fbi
+
+# Print SPDX SBOM
+cargo run --release -- --sbom
+
+# Run unit tests (67 tests)
+cargo test
+
+# Run integration tests (f49-f60)
 cargo run --bin whyyoulying-test --features tests
 ```
 
@@ -76,9 +84,12 @@ cargo run --bin whyyoulying-test --features tests
 
 | Command | Description |
 |---------|-------------|
-| `run` | Load data, run labor + ghost detectors, output alerts (default) |
+| `run` | Load data, run all detectors, output alerts (default) |
 | `ingest` | Load and validate data only |
-| `export-referral` | Export GAGAS referral package or FBI case-opening docs |
+| `export-referral` | Export GAGAS referral package for DoD IG |
+| `export-referral --fbi` | Export FBI case-opening per AG Guidelines |
+| `demo` | Run detection on baked-in sample contracts (text, json, or html) |
+| `govdocs` | Print federal compliance docs (sbom, fips, cmmc, etc.) |
 
 ### Options
 
@@ -86,11 +97,12 @@ cargo run --bin whyyoulying-test --features tests
 |------|-------------|
 | `--data-path PATH` | Directory with contracts.json, employees.json, labor_charges.json, billing_records.json |
 | `--config PATH` | Config file (labor_variance_threshold_pct, min_confidence) |
-| `--threshold PCT` | Labor variance threshold (0–100) |
+| `--threshold PCT` | Labor variance threshold 0-100 (default 15) |
 | `--min-confidence 0-100` | Filter alerts below confidence (S4 false-positive control) |
 | `--agency AGENCY` | DoD nexus: filter by agency (e.g. DoD, Army) |
 | `--cage-code CODE` | DoD nexus: filter by CAGE code |
 | `--output json\|csv` | Output format |
+| `--sbom` | Print SPDX 2.3 SBOM and exit |
 
 ### Exit Codes
 
@@ -128,16 +140,36 @@ See `fixtures/` for examples.
 
 ---
 
+## Code Metrics
+
+| Metric | Value |
+|--------|-------|
+| Lines of Rust | 2,603 |
+| Source files | 16 |
+| Detection rules | 8 |
+| Unit tests | 67 |
+| Integration tests | 12 (f49-f60) |
+| Direct dependencies | 6 (anyhow, clap, serde, serde_json, tempfile, thiserror) |
+| Release binary (macOS ARM) | 621 KB |
+
+All public symbols are P13 compressed per [compression_map](docs/compression_map.md).
+
+---
+
 ## Docs
 
-- [USER_STORY_ANALYSIS](docs/USER_STORY_ANALYSIS.md) — DoD IG / FBI personas
-- [TRIPLE_SIMS_WHYYOULYING](docs/TRIPLE_SIMS_WHYYOULYING.md) — Sim 1–4
+- [USER_STORY_ANALYSIS](USER_STORY_ANALYSIS.md) — DoD IG / FBI personas and gap analysis
+- [TIMELINE_OF_INVENTION](TIMELINE_OF_INVENTION.md) — Chronological commit record
+- [PROOF_OF_ARTIFACTS](PROOF_OF_ARTIFACTS.md) — Verifiable build and test metrics
+- [TRIPLE_SIMS_WHYYOULYING](docs/TRIPLE_SIMS_WHYYOULYING.md) — Sim 1-4
 - [TRIPLE_SIMS_ARCH](docs/TRIPLE_SIMS_ARCH.md) — Domain model, pipeline
 - [TRIPLE_SIMS_STAT](docs/TRIPLE_SIMS_STAT.md) — Test coverage stats
-- [protocol_map](docs/protocol_map.md) — Protocol abbreviations and commands
+- [protocol_map](docs/protocol_map.md) — Protocol abbreviations
 - [compression_map](docs/compression_map.md) — P13 tokenization map
 
 ### Federal Compliance (govdocs/)
+
+All compliance docs are baked into the binary and available at runtime via `whyyoulying govdocs <doc>`.
 
 - [SBOM](govdocs/SBOM.md) — Software Bill of Materials (EO 14028)
 - [SSDF](govdocs/SSDF.md) — NIST SP 800-218 compliance

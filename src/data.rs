@@ -59,37 +59,136 @@ impl t4 {
         Self::f5(Path::new(path))
     }
 
-    /// f5=load_from_path
+    /// f5=load_from_path. JSON preferred; falls back to CSV.
     pub fn f5(path: &Path) -> Result<t3> {
         let mut ds = t3::default();
 
-        let p = path.join("contracts.json");
-        if p.exists() {
-            let s = std::fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))?;
-            let raw: Vec<t6> = serde_json::from_str(&s).with_context(|| format!("parse {}", p.display()))?;
+        // Contracts
+        let json = path.join("contracts.json");
+        let csv = path.join("contracts.csv");
+        if json.exists() {
+            let s = std::fs::read_to_string(&json).with_context(|| format!("read {}", json.display()))?;
+            let raw: Vec<t6> = serde_json::from_str(&s).with_context(|| format!("parse {}", json.display()))?;
             ds.s7 = raw.into_iter().map(|c| (c.s22.clone(), c)).collect();
+        } else if csv.exists() {
+            for row in f22(&csv)? {
+                let c = t6 {
+                    s22: row.get("id").cloned().unwrap_or_default(),
+                    s23: row.get("cage_code").cloned().filter(|s| !s.is_empty()),
+                    s24: row.get("agency").cloned().filter(|s| !s.is_empty()),
+                    s25: HashMap::new(), s26: HashMap::new(),
+                };
+                ds.s7.insert(c.s22.clone(), c);
+            }
         }
 
-        let p = path.join("employees.json");
-        if p.exists() {
-            let s = std::fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))?;
-            let raw: Vec<t7> = serde_json::from_str(&s).with_context(|| format!("parse {}", p.display()))?;
+        // Employees
+        let json = path.join("employees.json");
+        let csv = path.join("employees.csv");
+        if json.exists() {
+            let s = std::fs::read_to_string(&json).with_context(|| format!("read {}", json.display()))?;
+            let raw: Vec<t7> = serde_json::from_str(&s).with_context(|| format!("parse {}", json.display()))?;
             ds.s8 = raw.into_iter().map(|e| (e.s27.clone(), e)).collect();
+        } else if csv.exists() {
+            for row in f22(&csv)? {
+                let e = t7 {
+                    s27: row.get("id").cloned().unwrap_or_default(),
+                    s28: row.get("quals").map(|q| q.split(';').map(|s| s.trim().to_string()).collect()).unwrap_or_default(),
+                    s29: row.get("labor_cat_min").cloned().filter(|s| !s.is_empty()),
+                    s30: row.get("verified").is_some_and(|v| v == "true" || v == "1"),
+                };
+                ds.s8.insert(e.s27.clone(), e);
+            }
         }
 
-        let p = path.join("labor_charges.json");
-        if p.exists() {
-            let s = std::fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))?;
-            ds.s9 = serde_json::from_str(&s).with_context(|| format!("parse {}", p.display()))?;
+        // Labor charges
+        let json = path.join("labor_charges.json");
+        let csv = path.join("labor_charges.csv");
+        if json.exists() {
+            let s = std::fs::read_to_string(&json).with_context(|| format!("read {}", json.display()))?;
+            ds.s9 = serde_json::from_str(&s).with_context(|| format!("parse {}", json.display()))?;
+        } else if csv.exists() {
+            for row in f22(&csv)? {
+                ds.s9.push(t8 {
+                    s31: row.get("contract_id").cloned().unwrap_or_default(),
+                    s32: row.get("employee_id").cloned().unwrap_or_default(),
+                    s33: row.get("labor_cat").cloned().unwrap_or_default(),
+                    s34: row.get("hours").and_then(|h| h.parse().ok()).unwrap_or(0.0),
+                    s35: row.get("rate").and_then(|r| r.parse().ok()),
+                });
+            }
         }
 
-        let p = path.join("billing_records.json");
-        if p.exists() {
-            let s = std::fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))?;
-            ds.s10 = serde_json::from_str(&s).with_context(|| format!("parse {}", p.display()))?;
+        // Billing records
+        let json = path.join("billing_records.json");
+        let csv = path.join("billing_records.csv");
+        if json.exists() {
+            let s = std::fs::read_to_string(&json).with_context(|| format!("read {}", json.display()))?;
+            ds.s10 = serde_json::from_str(&s).with_context(|| format!("parse {}", json.display()))?;
+        } else if csv.exists() {
+            for row in f22(&csv)? {
+                ds.s10.push(t9 {
+                    s36: row.get("contract_id").cloned().unwrap_or_default(),
+                    s37: row.get("employee_id").cloned().unwrap_or_default(),
+                    s38: row.get("billed_hours").and_then(|h| h.parse().ok()).unwrap_or(0.0),
+                    s39: row.get("billed_cat").cloned().unwrap_or_default(),
+                    s40: row.get("period").cloned().filter(|s| !s.is_empty()),
+                });
+            }
         }
 
         Ok(ds)
+    }
+}
+
+/// f22=parse_csv. Minimal CSV parser: header row + data rows. Handles quoted fields.
+fn f22(path: &Path) -> Result<Vec<HashMap<String, String>>> {
+    let content = std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+    let mut lines = content.lines();
+    let header_line = lines.next().context("CSV file is empty")?;
+    let headers: Vec<&str> = parse_csv_row(header_line);
+    let mut rows = Vec::new();
+    for line in lines {
+        let line = line.trim();
+        if line.is_empty() { continue; }
+        let fields = parse_csv_row(line);
+        let mut row = HashMap::new();
+        for (i, h) in headers.iter().enumerate() {
+            if let Some(val) = fields.get(i) {
+                row.insert(h.to_string(), val.to_string());
+            }
+        }
+        rows.push(row);
+    }
+    Ok(rows)
+}
+
+/// Parse a single CSV row, handling quoted fields with embedded commas.
+fn parse_csv_row(line: &str) -> Vec<&str> {
+    let mut fields = Vec::new();
+    let mut start = 0;
+    let mut in_quotes = false;
+    let bytes = line.as_bytes();
+    for i in 0..bytes.len() {
+        match bytes[i] {
+            b'"' => in_quotes = !in_quotes,
+            b',' if !in_quotes => {
+                fields.push(unquote(&line[start..i]));
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    fields.push(unquote(&line[start..]));
+    fields
+}
+
+fn unquote(s: &str) -> &str {
+    let s = s.trim();
+    if s.starts_with('"') && s.ends_with('"') && s.len() >= 2 {
+        &s[1..s.len()-1]
+    } else {
+        s
     }
 }
 
@@ -230,5 +329,76 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         std::fs::write(tmp.path().join("contracts.json"), "not json").unwrap();
         assert!(t4::f5(tmp.path()).is_err());
+    }
+
+    // --- CSV ingest ---
+
+    #[test]
+    fn csv_ingest_contracts() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::write(tmp.path().join("contracts.csv"), "id,cage_code,agency\nC1,1X,DoD\nC2,,GSA\n").unwrap();
+        let ds = t4::f5(tmp.path()).unwrap();
+        assert_eq!(ds.s7.len(), 2);
+        assert_eq!(ds.f6("C1").unwrap().s23.as_deref(), Some("1X"));
+        assert_eq!(ds.f6("C2").unwrap().s23, None); // empty → None
+    }
+
+    #[test]
+    fn csv_ingest_employees() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::write(tmp.path().join("employees.csv"), "id,quals,labor_cat_min,verified\nE1,BA;Senior,Junior,true\nE2,,,false\n").unwrap();
+        let ds = t4::f5(tmp.path()).unwrap();
+        assert_eq!(ds.s8.len(), 2);
+        assert_eq!(ds.f7("E1").unwrap().s28, vec!["BA", "Senior"]);
+        assert!(ds.f7("E1").unwrap().s30);
+        assert!(!ds.f7("E2").unwrap().s30);
+    }
+
+    #[test]
+    fn csv_ingest_labor_charges() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::write(tmp.path().join("labor_charges.csv"), "contract_id,employee_id,labor_cat,hours,rate\nC1,E1,Senior,40.0,150.0\n").unwrap();
+        let ds = t4::f5(tmp.path()).unwrap();
+        assert_eq!(ds.s9.len(), 1);
+        assert_eq!(ds.s9[0].s34, 40.0);
+        assert_eq!(ds.s9[0].s35, Some(150.0));
+    }
+
+    #[test]
+    fn csv_ingest_billing_records() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::write(tmp.path().join("billing_records.csv"), "contract_id,employee_id,billed_hours,billed_cat,period\nC1,E1,80.0,Senior,2026-01\n").unwrap();
+        let ds = t4::f5(tmp.path()).unwrap();
+        assert_eq!(ds.s10.len(), 1);
+        assert_eq!(ds.s10[0].s38, 80.0);
+        assert_eq!(ds.s10[0].s40.as_deref(), Some("2026-01"));
+    }
+
+    #[test]
+    fn csv_ingest_quoted_fields() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::write(tmp.path().join("contracts.csv"), "id,cage_code,agency\n\"C1\",\"1X\",\"DoD\"\n").unwrap();
+        let ds = t4::f5(tmp.path()).unwrap();
+        assert_eq!(ds.s7.len(), 1);
+        assert_eq!(ds.f6("C1").unwrap().s24.as_deref(), Some("DoD"));
+    }
+
+    #[test]
+    fn csv_ingest_json_preferred() {
+        // When both .json and .csv exist, JSON should be used
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::write(tmp.path().join("contracts.json"), r#"[{"id":"J1","labor_cats":{}}]"#).unwrap();
+        std::fs::write(tmp.path().join("contracts.csv"), "id,cage_code,agency\nC1,1X,DoD\n").unwrap();
+        let ds = t4::f5(tmp.path()).unwrap();
+        assert!(ds.f6("J1").is_some()); // JSON wins
+        assert!(ds.f6("C1").is_none());
+    }
+
+    #[test]
+    fn csv_ingest_empty_file() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::write(tmp.path().join("contracts.csv"), "id,cage_code,agency\n").unwrap();
+        let ds = t4::f5(tmp.path()).unwrap();
+        assert!(ds.s7.is_empty()); // header only, no data
     }
 }

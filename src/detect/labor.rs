@@ -69,7 +69,7 @@ impl t13 {
                         &format!("Labor category '{}' not in contract {}", lc.s33, lc.s31),
                         Some(&lc.s31), Some(&lc.s32),
                         c.s23.as_deref(), c.s24.as_deref(),
-                        vec![t12::E12],
+                        vec![t12::E12], None,
                     ));
                 }
             }
@@ -80,6 +80,7 @@ impl t13 {
                     if contract_rate > 0.0 {
                         let variance_pct = ((charged_rate - contract_rate) / contract_rate) * 100.0;
                         if variance_pct > self.s41 {
+                            let loss = (charged_rate - contract_rate) * lc.s34;
                             alerts.push(alert(
                                 t11::E6, 85, 7,
                                 &format!(
@@ -88,7 +89,7 @@ impl t13 {
                                 ),
                                 Some(&lc.s31), Some(&lc.s32),
                                 c.s23.as_deref(), c.s24.as_deref(),
-                                vec![t12::E12, t12::E13],
+                                vec![t12::E12, t12::E13], Some(loss),
                             ));
                         }
                     }
@@ -106,7 +107,7 @@ impl t13 {
                                 Some(&lc.s31), Some(&lc.s32),
                                 c.and_then(|x| x.s23.as_ref()).map(|s| s.as_str()),
                                 c.and_then(|x| x.s24.as_ref()).map(|s| s.as_str()),
-                                vec![t12::E12, t12::E13],
+                                vec![t12::E12, t12::E13], None,
                             ));
                         }
                     }
@@ -122,13 +123,13 @@ fn alert(
     rule_id: t11, confidence: u8, severity: u8, summary: &str,
     contract_id: Option<&str>, employee_id: Option<&str>,
     cage_code: Option<&str>, agency: Option<&str>,
-    predicate_acts: Vec<t12>,
+    predicate_acts: Vec<t12>, estimated_loss: Option<f64>,
 ) -> t5 {
     t5 {
         s11: t10::E2, s12: rule_id, s13: severity, s14: confidence,
         s15: summary.to_string(),
         s16: contract_id.map(String::from), s17: employee_id.map(String::from),
         s18: cage_code.map(String::from), s19: agency.map(String::from),
-        s20: Some(predicate_acts), s21: Some(f20()),
+        s20: Some(predicate_acts), s21: Some(f20()), s66: estimated_loss,
     }
 }

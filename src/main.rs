@@ -26,6 +26,8 @@ struct Cli {
     agency: Option<String>,
     #[arg(long, global = true, help = "DoD nexus: filter by CAGE code")]
     cage_code: Option<String>,
+    #[arg(long, global = true, value_parser = clap::value_parser!(f64), help = "Filter alerts below estimated dollar loss")]
+    min_loss: Option<f64>,
     #[arg(long, short, global = true, default_value = "json", value_enum)]
     output: OutputFormat,
     #[command(subcommand)]
@@ -96,6 +98,7 @@ fn load_config(cli: &Cli) -> Result<whyyoulying::config::t1> {
         cli.threshold, cli.min_confidence,
         cli.agency.clone(), cli.cage_code.clone(),
     )?;
+    cfg.f21(cli.min_loss);
     Ok(cfg)
 }
 
@@ -123,6 +126,9 @@ fn run(cli: &Cli) -> Result<i32> {
     let has_nexus_filter = config.s4.is_some() || config.s5.is_some();
     alerts.retain(|a| {
         if a.s14 < config.s3 { return false; }
+        if let Some(min_loss) = config.s67 {
+            if a.s66.unwrap_or(0.0) < min_loss { return false; }
+        }
         match a.s16.as_ref() {
             Some(id) => nexus_ids.contains(id.as_str()),
             None if !has_nexus_filter => true,
@@ -141,13 +147,14 @@ fn run(cli: &Cli) -> Result<i32> {
     match cli.output {
         OutputFormat::Json => { println!("{}", serde_json::to_string_pretty(&alerts)?); }
         OutputFormat::Csv => {
-            println!("fraud_type,rule_id,severity,confidence,summary,contract_id,employee_id,cage_code,agency,timestamp");
+            println!("fraud_type,rule_id,severity,confidence,summary,contract_id,employee_id,cage_code,agency,timestamp,estimated_loss");
             for a in &alerts {
-                println!("{},{},{},{},{},{},{},{},{},{}",
+                println!("{},{},{},{},{},{},{},{},{},{},{}",
                     a.s11, a.s12, a.s13, a.s14, escape_csv(&a.s15),
                     a.s16.as_deref().unwrap_or(""), a.s17.as_deref().unwrap_or(""),
                     a.s18.as_deref().unwrap_or(""), a.s19.as_deref().unwrap_or(""),
-                    a.s21.as_deref().unwrap_or(""));
+                    a.s21.as_deref().unwrap_or(""),
+                    a.s66.map(|v| format!("{:.2}", v)).unwrap_or_default());
             }
         }
     }
@@ -184,6 +191,9 @@ fn cmd_export_referral(cli: &Cli, path: Option<&std::path::Path>, fbi_format: bo
     let has_nexus_filter = config.s4.is_some() || config.s5.is_some();
     alerts.retain(|a| {
         if a.s14 < config.s3 { return false; }
+        if let Some(min_loss) = config.s67 {
+            if a.s66.unwrap_or(0.0) < min_loss { return false; }
+        }
         match a.s16.as_ref() {
             Some(id) => nexus_ids.contains(id.as_str()),
             None if !has_nexus_filter => true,

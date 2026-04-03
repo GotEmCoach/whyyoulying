@@ -49,7 +49,7 @@ impl t15 {
                         employee_id, total_hours, period, self.s42, excess),
                     s16: None, s17: Some(employee_id.to_string()),
                     s18: cage_code, s19: agency,
-                    s20: Some(vec![t12::E12]), s21: Some(f20()),
+                    s20: Some(vec![t12::E12]), s21: Some(f20()), s66: None,
                 });
             }
         }

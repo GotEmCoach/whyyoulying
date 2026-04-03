@@ -98,6 +98,9 @@ pub struct t5 {
     pub s20: Option<Vec<t12>>,
     #[serde(rename = "timestamp")]
     pub s21: Option<String>,
+    /// s66=estimated_loss. Dollar amount of suspected fraud.
+    #[serde(rename = "estimated_loss", skip_serializing_if = "Option::is_none")]
+    pub s66: Option<f64>,
 }
 
 // --- Domain entities (TRIPLE_SIMS_ARCH §1) ---
@@ -174,7 +177,7 @@ mod tests {
         let a = t5 {
             s11: t10::E2, s12: t11::E4, s13: 5, s14: 85,
             s15: "x".into(), s16: None, s17: None, s18: None,
-            s19: None, s20: None, s21: None,
+            s19: None, s20: None, s21: None, s66: None,
         };
         let j = serde_json::to_string(&a).unwrap();
         assert!(j.contains("labor_category"));
@@ -185,7 +188,7 @@ mod tests {
         let a = t5 {
             s11: t10::E3, s12: t11::E7, s13: 8, s14: 95,
             s15: "x".into(), s16: None, s17: None, s18: None,
-            s19: None, s20: None, s21: None,
+            s19: None, s20: None, s21: None, s66: None,
         };
         let j = serde_json::to_string(&a).unwrap();
         assert!(j.contains("GHOST_NO_EMPLOYEE"));
@@ -197,7 +200,7 @@ mod tests {
             s11: t10::E2, s12: t11::E5, s13: 7, s14: 90,
             s15: "test".into(), s16: Some("C1".into()), s17: Some("E1".into()),
             s18: Some("1ABC".into()), s19: Some("DoD".into()),
-            s20: Some(vec![t12::E12]), s21: Some("2026-01-01T00:00:00Z".into()),
+            s20: Some(vec![t12::E12]), s21: Some("2026-01-01T00:00:00Z".into()), s66: Some(5000.0),
         };
         let j = serde_json::to_string(&a).unwrap();
         let b: t5 = serde_json::from_str(&j).unwrap();
@@ -240,7 +243,7 @@ mod tests {
         let a = t5 {
             s11: t10::E3, s12: t11::E7, s13: 8, s14: 95,
             s15: "x".into(), s16: None, s17: None, s18: None,
-            s19: None, s20: None, s21: None,
+            s19: None, s20: None, s21: None, s66: None,
         };
         let j = serde_json::to_string(&a).unwrap();
         assert!(j.contains("ghost_billing"));
@@ -251,7 +254,7 @@ mod tests {
         let a = t5 {
             s11: t10::E2, s12: t11::E4, s13: 5, s14: 85,
             s15: "x".into(), s16: None, s17: None, s18: None,
-            s19: None, s20: Some(vec![t12::E13]), s21: None,
+            s19: None, s20: Some(vec![t12::E13]), s21: None, s66: None,
         };
         let j = serde_json::to_string(&a).unwrap();
         assert!(j.contains("wire_fraud"));

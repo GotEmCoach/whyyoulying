@@ -54,10 +54,20 @@ impl t14 {
 
             if checked_employees.insert((&br.s36, &br.s37)) {
                 if !employee_ids.contains(br.s37.as_str()) {
+                    // Estimate loss: sum all billed hours * contract rate for this employee
+                    let loss: f64 = ds.s10.iter()
+                        .filter(|b| b.s37 == br.s37 && b.s36 == br.s36)
+                        .map(|b| {
+                            let rate = contract
+                                .and_then(|c| c.s26.iter().find(|(k, _)| k.eq_ignore_ascii_case(&b.s39)).map(|(_, v)| *v))
+                                .unwrap_or(100.0);
+                            b.s38 * rate
+                        })
+                        .sum();
                     alerts.push(alert(t11::E7, 95, 8,
                         &format!("Billed employee '{}' not in employee roster", br.s37),
                         Some(&br.s36), Some(&br.s37), cage_code, agency,
-                        vec![t12::E12, t12::E14],
+                        vec![t12::E12, t12::E14], Some(loss),
                     ));
                 }
 
@@ -66,7 +76,7 @@ impl t14 {
                         alerts.push(alert(t11::E8, 70, 5,
                             &format!("Billed employee '{}' has no floorcheck verification", br.s37),
                             Some(&br.s36), Some(&br.s37), cage_code, agency,
-                            vec![t12::E12],
+                            vec![t12::E12], None,
                         ));
                     }
                 }
@@ -82,11 +92,16 @@ impl t14 {
                 let (cage_code, agency) = contract
                     .map(|c| (c.s23.as_deref(), c.s24.as_deref()))
                     .unwrap_or((None, None));
+                let excess = total_billed - performed;
+                let rate = contract
+                    .and_then(|c| c.s26.iter().find(|(k, _)| k.eq_ignore_ascii_case(&key.2)).map(|(_, v)| *v))
+                    .unwrap_or(100.0);
+                let loss = excess * rate;
                 alerts.push(alert(t11::E9, conf, sev,
                     &format!("Billed {} hrs for {}/{}/{} but only {} hrs performed",
                         total_billed, key.0, key.1, key.2, performed),
                     Some(&key.0), Some(&key.1), cage_code, agency,
-                    vec![t12::E12, t12::E13],
+                    vec![t12::E12, t12::E13], Some(loss),
                 ));
             }
         }
@@ -99,13 +114,13 @@ fn alert(
     rule_id: t11, confidence: u8, severity: u8, summary: &str,
     contract_id: Option<&str>, employee_id: Option<&str>,
     cage_code: Option<&str>, agency: Option<&str>,
-    predicate_acts: Vec<t12>,
+    predicate_acts: Vec<t12>, estimated_loss: Option<f64>,
 ) -> t5 {
     t5 {
         s11: t10::E3, s12: rule_id, s13: severity, s14: confidence,
         s15: summary.to_string(),
         s16: contract_id.map(String::from), s17: employee_id.map(String::from),
         s18: cage_code.map(String::from), s19: agency.map(String::from),
-        s20: Some(predicate_acts), s21: Some(f20()),
+        s20: Some(predicate_acts), s21: Some(f20()), s66: estimated_loss,
     }
 }

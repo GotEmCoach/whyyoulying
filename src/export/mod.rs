@@ -123,7 +123,7 @@ mod tests {
         t5 {
             s11: t10::E2, s12: t11::E5, s13: 7, s14: 90,
             s15: "test".into(), s16: Some("C1".into()), s17: Some("E1".into()),
-            s18: None, s19: None, s20: Some(vec![t12::E12]), s21: None,
+            s18: None, s19: None, s20: Some(vec![t12::E12]), s21: None, s66: None,
         }
     }
 

@@ -34,6 +34,9 @@ pub struct t1 {
     /// s6=max_hours_per_period. TIME_OVERCHARGE threshold.
     #[serde(rename = "max_hours_per_period", default = "default_s6")]
     pub s6: f64,
+    /// s67=min_loss. Filter alerts below estimated dollar loss.
+    #[serde(rename = "min_loss", default)]
+    pub s67: Option<f64>,
 }
 
 fn default_s3() -> u8 { 50 }
@@ -41,7 +44,7 @@ fn default_s6() -> f64 { 176.0 }
 
 impl Default for t1 {
     fn default() -> Self {
-        Self { s1: 15.0, s2: None, s3: 50, s4: None, s5: None, s6: 176.0 }
+        Self { s1: 15.0, s2: None, s3: 50, s4: None, s5: None, s6: 176.0, s67: None }
     }
 }
 
@@ -79,6 +82,11 @@ impl t1 {
         if filter_agency.is_some() { self.s4 = filter_agency; }
         if filter_cage_code.is_some() { self.s5 = filter_cage_code; }
         Ok(())
+    }
+
+    /// f21=apply_min_loss
+    pub fn f21(&mut self, min_loss: Option<f64>) {
+        if min_loss.is_some() { self.s67 = min_loss; }
     }
 }
 

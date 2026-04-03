@@ -53,7 +53,7 @@ impl t16 {
                     employee_id, contract_ids.len(), contract_list, period, total_hours),
                 s16: None, s17: Some(employee_id.to_string()),
                 s18: cage_code.map(String::from), s19: agency.map(String::from),
-                s20: Some(vec![t12::E12, t12::E13]), s21: Some(f20()),
+                s20: Some(vec![t12::E12, t12::E13]), s21: Some(f20()), s66: None,
             });
         }
         alerts

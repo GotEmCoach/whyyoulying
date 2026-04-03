@@ -9,7 +9,7 @@ Last reorganized: 2026-04-03.
 1. ~~[fix] E5 silent failure~~ DONE (014ae97→this) — normalize_category() with alias matching, category_level() returns Option
 2. ~~[fix] E9 split-billing bypass~~ DONE — aggregate billed hours before comparing, deduplicate E7/E8 alerts
 3. ~~[fix] E4 case-sensitive match~~ DONE — eq_ignore_ascii_case for category lookup + rate lookup
-4. [feature] Add estimated_loss (s66) to core Alert (t5) — move dollar estimation from demo.rs into detectors, enable --min-loss CLI filter (v0.3.0 Phase 1)
+4. ~~[feature] Add estimated_loss (s66) to core Alert~~ DONE — s66 on t5, s67 on t1, --min-loss CLI filter, E6/E7/E9 compute loss inline
 5. [feature] CSV ingest — hand-rolled parser in data.rs, fall back to JSON when both exist, no new deps (v0.3.0 Phase 1)
 6. [feature] SUB_BILLED_AS_PRIME rule (E16) — detect subcontractor billed at prime rate, add is_subcontractor field to Employee (v0.3.0 Phase 2). Dep: exopack (cochranblock/exopack) for triple sims gate
 7. [feature] RATE_ESCALATION_TREND rule (E17) — detect gradual rate creep across billing periods, add period field to LaborCharge (v0.3.0 Phase 2)

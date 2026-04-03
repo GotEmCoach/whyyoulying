@@ -4,6 +4,7 @@
 pub mod duplicate;
 pub mod ghost;
 pub mod labor;
+pub mod subcontractor;
 pub mod time;
 
 #[cfg(test)]
@@ -12,6 +13,7 @@ mod tests {
     use super::ghost::t14;
     use super::time::t15;
     use super::duplicate::t16;
+    use super::subcontractor::t22;
     use crate::data::t3;
     use crate::types::{t6, t7, t8, t9};
 
@@ -31,7 +33,7 @@ mod tests {
         let mut ds = t3::default();
         let c = contract("C1", Some("DoD"), None);
         ds.s7.insert(c.s22.clone(), c);
-        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s28: vec!["BA".into()], s29: Some("Junior".into()), s30: false });
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s28: vec!["BA".into()], s29: Some("Junior".into()), s30: false, ..Default::default() });
         ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Principal".into(), s34: 40.0, s35: Some(150.0) });
         let det = t13::f10(15.0);
         let alerts = det.f11(&ds);

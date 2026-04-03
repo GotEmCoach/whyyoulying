@@ -13,6 +13,8 @@ pub enum t10 {
     E2,
     #[serde(rename = "ghost_billing")]
     E3,
+    #[serde(rename = "subcontractor_fraud")]
+    E15,
 }
 
 impl fmt::Display for t10 {
@@ -20,6 +22,7 @@ impl fmt::Display for t10 {
         f.write_str(match self {
             t10::E2 => "labor_category",
             t10::E3 => "ghost_billing",
+            t10::E15 => "subcontractor_fraud",
         })
     }
 }
@@ -43,6 +46,8 @@ pub enum t11 {
     E10,
     #[serde(rename = "DUPLICATE_BILLING")]
     E11,
+    #[serde(rename = "SUB_BILLED_AS_PRIME")]
+    E16,
 }
 
 impl fmt::Display for t11 {
@@ -56,6 +61,7 @@ impl fmt::Display for t11 {
             t11::E9 => "GHOST_BILLED_NOT_PERFORMED",
             t11::E10 => "TIME_OVERCHARGE",
             t11::E11 => "DUPLICATE_BILLING",
+            t11::E16 => "SUB_BILLED_AS_PRIME",
         })
     }
 }
@@ -136,6 +142,9 @@ pub struct t7 {
     /// Floorcheck verified (DCAA 13500).
     #[serde(rename = "verified")]
     pub s30: bool,
+    /// s70=is_subcontractor. True if employee is subcontractor, not prime.
+    #[serde(rename = "is_subcontractor", default)]
+    pub s70: Option<bool>,
 }
 
 /// t8=LaborCharge. Actual labor charged (timesheet/DCAA).

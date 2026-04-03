@@ -36,7 +36,7 @@ pub fn demo_dataset() -> t3 {
     ] {
         ds.s8.insert(id.into(), t7 {
             s27: id.into(), s28: vec!["BA".into()],
-            s29: cat.map(String::from), s30: verified,
+            s29: cat.map(String::from), s30: verified, ..Default::default()
         });
     }
 
@@ -93,7 +93,7 @@ pub fn demo_dataset() -> t3 {
     ] {
         ds.s8.insert(id.into(), t7 {
             s27: id.into(), s28: vec!["BS".into()],
-            s29: cat.map(String::from), s30: verified,
+            s29: cat.map(String::from), s30: verified, ..Default::default()
         });
     }
 
@@ -138,15 +138,15 @@ pub fn demo_dataset() -> t3 {
 
     ds.s8.insert("ICP-401".into(), t7 {
         s27: "ICP-401".into(), s28: vec!["PE".into()],
-        s29: Some("Lead".into()), s30: true,
+        s29: Some("Lead".into()), s30: true, ..Default::default()
     });
     ds.s8.insert("ICP-402".into(), t7 {
         s27: "ICP-402".into(), s28: vec!["Associate".into()],
-        s29: Some("Junior".into()), s30: false, // UNVERIFIED
+        s29: Some("Junior".into()), s30: false, ..Default::default() // UNVERIFIED
     });
     ds.s8.insert("ICP-403".into(), t7 {
         s27: "ICP-403".into(), s28: vec!["OSHA-30".into()],
-        s29: Some("Mid".into()), s30: true,
+        s29: Some("Mid".into()), s30: true, ..Default::default()
     });
 
     for (eid, cat, hrs, rate) in [

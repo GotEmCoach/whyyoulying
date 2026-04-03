@@ -4,7 +4,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use whyyoulying::{Alert, Config, DuplicateDetector, GhostDetector, Ingest, LaborDetector, TimeDetector};
+use whyyoulying::{Alert, Config, DuplicateDetector, GhostDetector, Ingest, LaborDetector, SubcontractorDetector, TimeDetector};
 
 #[derive(Parser)]
 #[command(name = "whyyoulying")]
@@ -116,10 +116,12 @@ fn run(cli: &Cli) -> Result<i32> {
     let ghost = GhostDetector::f12();
     let time = TimeDetector::f14(config.s6);
     let duplicate = DuplicateDetector::f16();
+    let sub = SubcontractorDetector::f23();
     let mut alerts: Vec<Alert> = labor.f11(&ds).into_iter()
         .chain(ghost.f13(&ds))
         .chain(time.f15(&ds))
         .chain(duplicate.f17(&ds))
+        .chain(sub.f24(&ds))
         .collect();
 
     let nexus_ids = ds.f9(config.s4.as_deref(), config.s5.as_deref());
@@ -181,10 +183,12 @@ fn cmd_export_referral(cli: &Cli, path: Option<&std::path::Path>, fbi_format: bo
     let ghost = GhostDetector::f12();
     let time = TimeDetector::f14(config.s6);
     let duplicate = DuplicateDetector::f16();
+    let sub = SubcontractorDetector::f23();
     let mut alerts: Vec<Alert> = labor.f11(&ds).into_iter()
         .chain(ghost.f13(&ds))
         .chain(time.f15(&ds))
         .chain(duplicate.f17(&ds))
+        .chain(sub.f24(&ds))
         .collect();
 
     let nexus_ids = ds.f9(config.s4.as_deref(), config.s5.as_deref());

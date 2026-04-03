@@ -96,6 +96,7 @@ impl t4 {
                     s28: row.get("quals").map(|q| q.split(';').map(|s| s.trim().to_string()).collect()).unwrap_or_default(),
                     s29: row.get("labor_cat_min").cloned().filter(|s| !s.is_empty()),
                     s30: row.get("verified").is_some_and(|v| v == "true" || v == "1"),
+                    s70: row.get("is_subcontractor").map(|v| v == "true" || v == "1"),
                 };
                 ds.s8.insert(e.s27.clone(), e);
             }

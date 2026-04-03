@@ -37,14 +37,18 @@ pub struct t1 {
     /// s67=min_loss. Filter alerts below estimated dollar loss.
     #[serde(rename = "min_loss", default)]
     pub s67: Option<f64>,
+    /// s68=rate_escalation_threshold_pct. Min % rate increase per period to trigger E17.
+    #[serde(rename = "rate_escalation_threshold_pct", default = "default_s68")]
+    pub s68: f64,
 }
 
 fn default_s3() -> u8 { 50 }
 fn default_s6() -> f64 { 176.0 }
+fn default_s68() -> f64 { 10.0 }
 
 impl Default for t1 {
     fn default() -> Self {
-        Self { s1: 15.0, s2: None, s3: 50, s4: None, s5: None, s6: 176.0, s67: None }
+        Self { s1: 15.0, s2: None, s3: 50, s4: None, s5: None, s6: 176.0, s67: None, s68: 10.0 }
     }
 }
 

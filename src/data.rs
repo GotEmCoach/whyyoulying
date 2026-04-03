@@ -116,6 +116,7 @@ impl t4 {
                     s33: row.get("labor_cat").cloned().unwrap_or_default(),
                     s34: row.get("hours").and_then(|h| h.parse().ok()).unwrap_or(0.0),
                     s35: row.get("rate").and_then(|r| r.parse().ok()),
+                    s71: row.get("period").cloned().filter(|s| !s.is_empty()),
                 });
             }
         }

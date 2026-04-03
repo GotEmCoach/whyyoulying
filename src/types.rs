@@ -48,6 +48,8 @@ pub enum t11 {
     E11,
     #[serde(rename = "SUB_BILLED_AS_PRIME")]
     E16,
+    #[serde(rename = "RATE_ESCALATION_TREND")]
+    E17,
 }
 
 impl fmt::Display for t11 {
@@ -62,6 +64,7 @@ impl fmt::Display for t11 {
             t11::E10 => "TIME_OVERCHARGE",
             t11::E11 => "DUPLICATE_BILLING",
             t11::E16 => "SUB_BILLED_AS_PRIME",
+            t11::E17 => "RATE_ESCALATION_TREND",
         })
     }
 }
@@ -160,6 +163,9 @@ pub struct t8 {
     pub s34: f64,
     #[serde(rename = "rate")]
     pub s35: Option<f64>,
+    /// s71=period. Billing period (e.g. "2026-01") for rate trend analysis.
+    #[serde(rename = "period", default)]
+    pub s71: Option<String>,
 }
 
 /// t9=BillingRecord. What was billed to gov.

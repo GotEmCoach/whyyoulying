@@ -3,7 +3,7 @@
 //! Sales tool for federal investigators. P13 compressed.
 
 use crate::data::t3;
-use crate::detect::{duplicate::t16, ghost::t14, labor::t13, time::t15};
+use crate::detect::{duplicate::t16, ghost::t14, labor::t13, rate_escalation::t23, subcontractor::t22, time::t15};
 use crate::types::{t5, t6, t7, t8, t9, t11};
 
 /// Build the demo dataset: 3 contracts, realistic fraud patterns.
@@ -46,7 +46,7 @@ pub fn demo_dataset() -> t3 {
         ("ACM-102", "Warehouse Supervisor", 168.0, 62.0),
         ("ACM-103", "Supply Chain Manager", 140.0, 135.0),
     ] {
-        ds.s9.push(t8 { s31: "DLOG-2024-0847".into(), s32: eid.into(), s33: cat.into(), s34: hrs, s35: Some(rate) });
+        ds.s9.push(t8 { s31: "DLOG-2024-0847".into(), s32: eid.into(), s33: cat.into(), s34: hrs, s35: Some(rate), s71: None });
     }
 
     // Billing records — includes ghost employee ACM-201 + inflated hours
@@ -103,7 +103,7 @@ pub fn demo_dataset() -> t3 {
         ("ITSVC-2025-1293", "PIN-302", "Systems Architect", 152.0, 210.0),
         ("ITSVC-2025-1293", "PIN-303", "Help Desk", 176.0, 55.0),
     ] {
-        ds.s9.push(t8 { s31: cid.into(), s32: eid.into(), s33: cat.into(), s34: hrs, s35: Some(rate) });
+        ds.s9.push(t8 { s31: cid.into(), s32: eid.into(), s33: cat.into(), s34: hrs, s35: Some(rate), s71: None });
     }
 
     // Billing — rate overbill on PIN-301 ($225 vs contract $175), duplicate on second contract
@@ -116,7 +116,7 @@ pub fn demo_dataset() -> t3 {
         ds.s10.push(t9 { s36: cid.into(), s37: eid.into(), s38: hrs, s39: cat.into(), s40: Some("2025-11".into()) });
     }
     // Overbilled rate on labor charge
-    ds.s9.push(t8 { s31: "ITSVC-2025-1293".into(), s32: "PIN-301".into(), s33: "Senior Developer".into(), s34: 160.0, s35: Some(225.0) });
+    ds.s9.push(t8 { s31: "ITSVC-2025-1293".into(), s32: "PIN-301".into(), s33: "Senior Developer".into(), s34: 160.0, s35: Some(225.0), s71: None });
 
     // --- Contract C: CNST-2024-0516 — Ironclad Construction Partners ---
     // Fraud: qual below (Junior billed as Lead), unverified employee
@@ -154,7 +154,7 @@ pub fn demo_dataset() -> t3 {
         ("ICP-402", "Site Inspector", 152.0, 95.0),
         ("ICP-403", "Safety Officer", 144.0, 110.0),
     ] {
-        ds.s9.push(t8 { s31: "CNST-2024-0516".into(), s32: eid.into(), s33: cat.into(), s34: hrs, s35: Some(rate) });
+        ds.s9.push(t8 { s31: "CNST-2024-0516".into(), s32: eid.into(), s33: cat.into(), s34: hrs, s35: Some(rate), s71: None });
     }
 
     // ICP-402 billed as Project Lead (qual below — Junior billing as Lead)
@@ -176,10 +176,14 @@ pub fn run_demo() -> (t3, Vec<t5>) {
     let ghost = t14::f12();
     let time = t15::f14(176.0);
     let dup = t16::f16();
+    let sub = t22::f23();
+    let rate_esc = t23::f25(10.0);
     let alerts: Vec<t5> = labor.f11(&ds).into_iter()
         .chain(ghost.f13(&ds))
         .chain(time.f15(&ds))
         .chain(dup.f17(&ds))
+        .chain(sub.f24(&ds))
+        .chain(rate_esc.f26(&ds))
         .collect();
     (ds, alerts)
 }

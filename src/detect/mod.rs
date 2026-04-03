@@ -4,6 +4,7 @@
 pub mod duplicate;
 pub mod ghost;
 pub mod labor;
+pub mod rate_escalation;
 pub mod subcontractor;
 pub mod time;
 
@@ -14,6 +15,7 @@ mod tests {
     use super::time::t15;
     use super::duplicate::t16;
     use super::subcontractor::t22;
+    use super::rate_escalation::t23;
     use crate::data::t3;
     use crate::types::{t6, t7, t8, t9};
 
@@ -339,6 +341,89 @@ mod tests {
         ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 60.0, s39: "Senior".into(), s40: None });
         let det = t14::f12();
         assert!(det.f13(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E9")));
+    }
+
+    // --- Subcontractor ---
+
+    #[test]
+    fn subcontractor_detector_empty_ds_no_alerts() {
+        assert!(t22::f23().f24(&t3::default()).is_empty());
+    }
+
+    #[test]
+    fn subcontractor_billed_as_prime_fires_e16() {
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 {
+            s22: "C1".into(), s23: Some("1X".into()), s24: Some("DoD".into()),
+            s26: [("Senior".to_string(), 120.0)].into_iter().collect(),
+            ..Default::default()
+        });
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s70: Some(true), ..Default::default() });
+        ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 40.0, s39: "Senior".into(), s40: None });
+        let alerts = t22::f23().f24(&ds);
+        assert!(!alerts.is_empty());
+        assert!(alerts.iter().any(|a| format!("{:?}", a.s12).contains("E16")));
+    }
+
+    #[test]
+    fn subcontractor_detector_loss_computed() {
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 {
+            s22: "C1".into(),
+            s26: [("Senior".to_string(), 100.0)].into_iter().collect(),
+            ..Default::default()
+        });
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s70: Some(true), ..Default::default() });
+        ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 40.0, s39: "Senior".into(), s40: None });
+        let alerts = t22::f23().f24(&ds);
+        assert_eq!(alerts[0].s66, Some(4000.0)); // 40 hrs * $100/hr
+    }
+
+    #[test]
+    fn non_subcontractor_no_e16_alert() {
+        let mut ds = t3::default();
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s70: Some(false), ..Default::default() });
+        ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 40.0, s39: "Senior".into(), s40: None });
+        assert!(t22::f23().f24(&ds).is_empty());
+    }
+
+    #[test]
+    fn subcontractor_flag_none_no_e16_alert() {
+        let mut ds = t3::default();
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s70: None, ..Default::default() });
+        ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 40.0, s39: "Senior".into(), s40: None });
+        assert!(t22::f23().f24(&ds).is_empty());
+    }
+
+    #[test]
+    fn subcontractor_unknown_employee_no_e16() {
+        // Employee not in roster — no s70 to check, should not fire E16
+        let mut ds = t3::default();
+        ds.s10.push(t9 { s36: "C1".into(), s37: "E99".into(), s38: 10.0, s39: "Junior".into(), s40: None });
+        assert!(t22::f23().f24(&ds).is_empty());
+    }
+
+    // --- Rate Escalation ---
+
+    #[test]
+    fn rate_escalation_detector_empty_ds_no_alerts() {
+        assert!(t23::f25(10.0).f26(&t3::default()).is_empty());
+    }
+
+    #[test]
+    fn rate_escalation_fires_e17() {
+        let mut ds = t3::default();
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: Some(100.0), s71: Some("2026-01".into()) });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: Some(120.0), s71: Some("2026-02".into()) });
+        assert!(t23::f25(10.0).f26(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E17")));
+    }
+
+    #[test]
+    fn rate_escalation_under_threshold_no_alert() {
+        let mut ds = t3::default();
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: Some(100.0), s71: Some("2026-01".into()) });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: Some(105.0), s71: Some("2026-02".into()) });
+        assert!(!t23::f25(10.0).f26(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E17")));
     }
 
     #[test]

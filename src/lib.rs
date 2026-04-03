@@ -23,6 +23,7 @@ pub use detect::{
     duplicate::t16 as DuplicateDetector,
     ghost::t14 as GhostDetector,
     labor::t13 as LaborDetector,
+    rate_escalation::t23 as RateEscalationDetector,
     subcontractor::t22 as SubcontractorDetector,
     time::t15 as TimeDetector,
 };

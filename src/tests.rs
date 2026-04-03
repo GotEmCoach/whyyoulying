@@ -45,6 +45,8 @@ pub fn f30() -> i32 {
         ("f58 export-referral", f58()),
         ("f59 export-fbi", f59()),
         ("f60 empty exit zero", f60()),
+        ("f61 e16 subcontractor", f61()),
+        ("f62 e17 rate escalation", f62()),
     ] {
         print!("{name}: ");
         if pass { println!("{green}PASS{reset}"); }
@@ -207,5 +209,58 @@ fn f60() -> bool {
     let (out, stdout, _) = run_bin(&["--data-path", tmp.path().to_str().unwrap()]);
     assert!(out.status.success());
     assert_eq!(stdout.trim(), "[]");
+    true
+}
+
+fn f61() -> bool {
+    use tempfile::TempDir;
+    let tmp = TempDir::new().unwrap();
+    let p = tmp.path();
+    let contracts = serde_json::json!([{
+        "id": "C1", "cage_code": "1X", "agency": "DoD",
+        "labor_cats": {"Senior": "CS"},
+        "labor_rates": {"Senior": 100.0}
+    }]);
+    std::fs::write(p.join("contracts.json"), contracts.to_string()).unwrap();
+    let employees = serde_json::json!([{
+        "id": "E1", "quals": ["CS"], "labor_cat_min": "Junior",
+        "verified": true, "is_subcontractor": true
+    }]);
+    std::fs::write(p.join("employees.json"), employees.to_string()).unwrap();
+    std::fs::write(p.join("labor_charges.json"), "[]").unwrap();
+    let billing = serde_json::json!([{
+        "contract_id": "C1", "employee_id": "E1",
+        "billed_hours": 40.0, "billed_cat": "Senior", "period": "2026-01"
+    }]);
+    std::fs::write(p.join("billing_records.json"), billing.to_string()).unwrap();
+
+    let ds = crate::Ingest::f5(p).unwrap();
+    let sub = crate::SubcontractorDetector::f23();
+    let alerts = sub.f24(&ds);
+    assert!(!alerts.is_empty(), "f61: expected E16 alert for subcontractor billed as prime");
+    assert!(alerts.iter().any(|a| format!("{:?}", a.s12).contains("E16")));
+    assert_eq!(alerts[0].s66, Some(4000.0)); // 40 hrs * $100/hr
+    true
+}
+
+fn f62() -> bool {
+    use tempfile::TempDir;
+    let tmp = TempDir::new().unwrap();
+    let p = tmp.path();
+    let contracts = serde_json::json!([{"id":"C1","labor_cats":{"Senior":"CS"}}]);
+    std::fs::write(p.join("contracts.json"), contracts.to_string()).unwrap();
+    std::fs::write(p.join("employees.json"), "[]").unwrap();
+    let labor = serde_json::json!([
+        {"contract_id":"C1","employee_id":"E1","labor_cat":"Senior","hours":40.0,"rate":100.0,"period":"2026-01"},
+        {"contract_id":"C1","employee_id":"E1","labor_cat":"Senior","hours":40.0,"rate":120.0,"period":"2026-02"}
+    ]);
+    std::fs::write(p.join("labor_charges.json"), labor.to_string()).unwrap();
+    std::fs::write(p.join("billing_records.json"), "[]").unwrap();
+
+    let ds = crate::Ingest::f5(p).unwrap();
+    let rate_esc = crate::RateEscalationDetector::f25(10.0);
+    let alerts = rate_esc.f26(&ds);
+    assert!(!alerts.is_empty(), "f62: expected E17 alert for 20% rate increase");
+    assert!(alerts.iter().any(|a| format!("{:?}", a.s12).contains("E17")));
     true
 }

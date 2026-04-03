@@ -33,38 +33,59 @@ impl t14 {
                 acc
             });
 
+        // Aggregate billed hours by (contract, employee, category) to prevent
+        // split-billing bypass where individual records stay under performed total.
+        let billed_hours: std::collections::HashMap<(String, String, String), f64> = ds.s10
+            .iter()
+            .fold(std::collections::HashMap::new(), |mut acc, br| {
+                let key = (br.s36.clone(), br.s37.clone(), br.s39.clone());
+                *acc.entry(key).or_insert(0.0) += br.s38;
+                acc
+            });
+
+        // Track which employees we've already checked for E7/E8 to avoid duplicate alerts
+        let mut checked_employees: HashSet<(&str, &str)> = HashSet::new();
+
         for br in &ds.s10 {
             let contract = ds.f6(&br.s36);
             let (cage_code, agency) = contract
                 .map(|c| (c.s23.as_deref(), c.s24.as_deref()))
                 .unwrap_or((None, None));
 
-            if !employee_ids.contains(br.s37.as_str()) {
-                alerts.push(alert(t11::E7, 95, 8,
-                    &format!("Billed employee '{}' not in employee roster", br.s37),
-                    Some(&br.s36), Some(&br.s37), cage_code, agency,
-                    vec![t12::E12, t12::E14],
-                ));
-            }
-
-            if let Some(emp) = ds.f7(&br.s37) {
-                if !emp.s30 {
-                    alerts.push(alert(t11::E8, 70, 5,
-                        &format!("Billed employee '{}' has no floorcheck verification", br.s37),
+            if checked_employees.insert((&br.s36, &br.s37)) {
+                if !employee_ids.contains(br.s37.as_str()) {
+                    alerts.push(alert(t11::E7, 95, 8,
+                        &format!("Billed employee '{}' not in employee roster", br.s37),
                         Some(&br.s36), Some(&br.s37), cage_code, agency,
-                        vec![t12::E12],
+                        vec![t12::E12, t12::E14],
                     ));
                 }
-            }
 
-            let key = (br.s36.clone(), br.s37.clone(), br.s39.clone());
-            let performed = performed_hours.get(&key).copied().unwrap_or(0.0);
-            if performed < br.s38 - 0.01 {
+                if let Some(emp) = ds.f7(&br.s37) {
+                    if !emp.s30 {
+                        alerts.push(alert(t11::E8, 70, 5,
+                            &format!("Billed employee '{}' has no floorcheck verification", br.s37),
+                            Some(&br.s36), Some(&br.s37), cage_code, agency,
+                            vec![t12::E12],
+                        ));
+                    }
+                }
+            }
+        }
+
+        // E9: Compare aggregated billed vs aggregated performed
+        for (key, total_billed) in &billed_hours {
+            let performed = performed_hours.get(key).copied().unwrap_or(0.0);
+            if performed < *total_billed - 0.01 {
                 let (conf, sev) = if performed == 0.0 { (90, 8) } else { (80, 7) };
+                let contract = ds.f6(&key.0);
+                let (cage_code, agency) = contract
+                    .map(|c| (c.s23.as_deref(), c.s24.as_deref()))
+                    .unwrap_or((None, None));
                 alerts.push(alert(t11::E9, conf, sev,
                     &format!("Billed {} hrs for {}/{}/{} but only {} hrs performed",
-                        br.s38, br.s36, br.s37, br.s39, performed),
-                    Some(&br.s36), Some(&br.s37), cage_code, agency,
+                        total_billed, key.0, key.1, key.2, performed),
+                    Some(&key.0), Some(&key.1), cage_code, agency,
                     vec![t12::E12, t12::E13],
                 ));
             }

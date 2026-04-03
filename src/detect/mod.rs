@@ -264,4 +264,93 @@ mod tests {
         ds.s10.push(t9 { s36: "C2".into(), s37: "E1".into(), s38: 40.0, s39: "Senior".into(), s40: None });
         assert!(t16::f16().f17(&ds).is_empty());
     }
+
+    // --- Fix: E5 category alias resolution ---
+
+    #[test]
+    fn labor_detector_project_lead_triggers_qual_below() {
+        // "Project Lead" should normalize to "Lead" and trigger E5 when employee is Junior
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("Project Lead".to_string(), "X".to_string())].into_iter().collect(), ..Default::default() });
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s29: Some("Junior".into()), ..Default::default() });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Project Lead".into(), s34: 40.0, s35: None });
+        let det = t13::f10(15.0);
+        assert!(det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E5")));
+    }
+
+    #[test]
+    fn labor_detector_sr_developer_normalizes_to_senior() {
+        // "Sr. Developer" should normalize to "Senior"
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("Sr. Developer".to_string(), "X".to_string())].into_iter().collect(), ..Default::default() });
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s29: Some("Junior".into()), ..Default::default() });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Sr. Developer".into(), s34: 40.0, s35: None });
+        let det = t13::f10(15.0);
+        assert!(det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E5")));
+    }
+
+    #[test]
+    fn labor_detector_unknown_both_sides_no_qual_alert() {
+        // Two unknown categories that don't normalize should NOT trigger E5
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("ZZZ_Custom".to_string(), "X".to_string())].into_iter().collect(), ..Default::default() });
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s29: Some("ZZZ_Other".into()), ..Default::default() });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "ZZZ_Custom".into(), s34: 40.0, s35: None });
+        let det = t13::f10(15.0);
+        assert!(!det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E5")));
+    }
+
+    // --- Fix: E4 case-insensitive category match ---
+
+    #[test]
+    fn labor_detector_case_insensitive_category_match() {
+        // "logistics analyst" should match "Logistics Analyst" in contract
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("Logistics Analyst".to_string(), "BA".to_string())].into_iter().collect(), ..Default::default() });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "logistics analyst".into(), s34: 40.0, s35: None });
+        let det = t13::f10(15.0);
+        // Should NOT fire E4 (variance) since category matches case-insensitively
+        assert!(!det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E4")));
+    }
+
+    #[test]
+    fn labor_detector_case_mismatch_used_to_false_positive() {
+        // Previously this would fire E4 due to case-sensitive match. Now fixed.
+        let mut ds = t3::default();
+        ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("Senior Developer".to_string(), "CS".to_string())].into_iter().collect(), ..Default::default() });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "SENIOR DEVELOPER".into(), s34: 40.0, s35: None });
+        let det = t13::f10(15.0);
+        assert!(!det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E4")));
+    }
+
+    // --- Fix: E9 split-billing aggregation ---
+
+    #[test]
+    fn ghost_detector_split_billing_detected() {
+        // Two billing records for same employee/contract/category that individually
+        // don't exceed performed, but in aggregate do. Previously bypassed E9.
+        let mut ds = t3::default();
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s30: true, ..Default::default() });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 100.0, s35: None });
+        // Two billing records: 60 + 60 = 120 billed, but only 100 performed
+        ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 60.0, s39: "Senior".into(), s40: None });
+        ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 60.0, s39: "Senior".into(), s40: None });
+        let det = t14::f12();
+        assert!(det.f13(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E9")));
+    }
+
+    #[test]
+    fn ghost_detector_split_billing_no_duplicate_e7_e8() {
+        // Same employee on same contract with multiple billing records should
+        // only produce one E8 (not verified) alert, not one per billing record
+        let mut ds = t3::default();
+        let c = contract("C1", None, None);
+        ds.s7.insert(c.s22.clone(), c);
+        ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s30: false, ..Default::default() });
+        ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 10.0, s39: "Junior".into(), s40: None });
+        ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 10.0, s39: "Junior".into(), s40: None });
+        let det = t14::f12();
+        let e8_count = det.f13(&ds).iter().filter(|a| format!("{:?}", a.s12).contains("E8")).count();
+        assert_eq!(e8_count, 1);
+    }
 }

@@ -6,9 +6,9 @@ Last reorganized: 2026-04-03.
 
 ---
 
-1. [fix] E5 silent failure: "Project Lead" not in CAT_ORDER, returns level 0, demo scenario never fires — category_level() needs fuzzy matching or expanded hierarchy (src/detect/labor.rs:10-14)
-2. [fix] E9 split-billing bypass: individual billing records compared to aggregated performed hours — should aggregate billed hours too before comparing (src/detect/ghost.rs:60-70)
-3. [fix] E4 case-sensitive match: "Logistics Analyst" vs "logistics analyst" silently passes — labor category lookup in E4 should use eq_ignore_ascii_case (src/detect/labor.rs:34)
+1. ~~[fix] E5 silent failure~~ DONE (014ae97→this) — normalize_category() with alias matching, category_level() returns Option
+2. ~~[fix] E9 split-billing bypass~~ DONE — aggregate billed hours before comparing, deduplicate E7/E8 alerts
+3. ~~[fix] E4 case-sensitive match~~ DONE — eq_ignore_ascii_case for category lookup + rate lookup
 4. [feature] Add estimated_loss (s66) to core Alert (t5) — move dollar estimation from demo.rs into detectors, enable --min-loss CLI filter (v0.3.0 Phase 1)
 5. [feature] CSV ingest — hand-rolled parser in data.rs, fall back to JSON when both exist, no new deps (v0.3.0 Phase 1)
 6. [feature] SUB_BILLED_AS_PRIME rule (E16) — detect subcontractor billed at prime rate, add is_subcontractor field to Employee (v0.3.0 Phase 2). Dep: exopack (cochranblock/exopack) for triple sims gate

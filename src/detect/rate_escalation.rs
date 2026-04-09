@@ -28,7 +28,7 @@ impl t23 {
         // Group: (contract_id, employee_id, labor_cat) → Vec<(period, rate)>
         let mut groups: HashMap<(String, String, String), Vec<(String, f64)>> = HashMap::new();
         for lc in &ds.s9 {
-            if let (Some(ref period), Some(rate)) = (&lc.s71, lc.s35) {
+            if let (Some(period), Some(rate)) = (&lc.s71, lc.s35) {
                 groups
                     .entry((lc.s31.clone(), lc.s32.clone(), lc.s33.clone()))
                     .or_default()

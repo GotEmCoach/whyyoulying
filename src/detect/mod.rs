@@ -36,7 +36,7 @@ mod tests {
         let c = contract("C1", Some("DoD"), None);
         ds.s7.insert(c.s22.clone(), c);
         ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s28: vec!["BA".into()], s29: Some("Junior".into()), s30: false, ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Principal".into(), s34: 40.0, s35: Some(150.0) });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Principal".into(), s34: 40.0, s35: Some(150.0), s71: None });
         let det = t13::f10(15.0);
         let alerts = det.f11(&ds);
         assert!(!alerts.is_empty());
@@ -47,7 +47,7 @@ mod tests {
     fn labor_detector_variance_unapproved_cat() {
         let mut ds = t3::default();
         ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("Senior".to_string(), "BA".to_string())].into_iter().collect(), ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "UnapprovedCat".into(), s34: 10.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "UnapprovedCat".into(), s34: 10.0, s35: None, s71: None });
         let det = t13::f10(15.0);
         let alerts = det.f11(&ds);
         assert!(!alerts.is_empty());
@@ -63,7 +63,7 @@ mod tests {
             s26: [("Senior".to_string(), 100.0)].into_iter().collect(),
             ..Default::default()
         });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: Some(120.0) });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: Some(120.0), s71: None });
         let det = t13::f10(15.0);
         let alerts = det.f11(&ds);
         assert!(alerts.iter().any(|a| format!("{:?}", a.s12).contains("E6")));
@@ -78,7 +78,7 @@ mod tests {
             s26: [("Senior".to_string(), 100.0)].into_iter().collect(),
             ..Default::default()
         });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: Some(110.0) });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: Some(110.0), s71: None });
         let det = t13::f10(15.0);
         assert!(!det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E6")));
     }
@@ -87,7 +87,7 @@ mod tests {
     fn labor_detector_rate_no_contract_rate_no_alert() {
         let mut ds = t3::default();
         ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("Senior".to_string(), "BA".to_string())].into_iter().collect(), ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: Some(999.0) });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: Some(999.0), s71: None });
         let det = t13::f10(15.0);
         assert!(!det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E6")));
     }
@@ -101,7 +101,7 @@ mod tests {
             s26: [("Senior".to_string(), 100.0)].into_iter().collect(),
             ..Default::default()
         });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: None, s71: None });
         let det = t13::f10(15.0);
         assert!(!det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E6")));
     }
@@ -111,7 +111,7 @@ mod tests {
         let mut ds = t3::default();
         ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("Junior".to_string(), "Assoc".to_string())].into_iter().collect(), ..Default::default() });
         ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s29: Some("Senior".into()), ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Junior".into(), s34: 40.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Junior".into(), s34: 40.0, s35: None, s71: None });
         let det = t13::f10(15.0);
         assert!(det.f11(&ds).is_empty());
     }
@@ -121,7 +121,7 @@ mod tests {
         let mut ds = t3::default();
         ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("CustomCat".to_string(), "X".to_string())].into_iter().collect(), ..Default::default() });
         ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s29: Some("OtherCustom".into()), ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "CustomCat".into(), s34: 40.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "CustomCat".into(), s34: 40.0, s35: None, s71: None });
         let det = t13::f10(15.0);
         assert!(!det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E5")));
     }
@@ -169,7 +169,7 @@ mod tests {
     fn ghost_detector_partial_performed() {
         let mut ds = t3::default();
         ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s30: true, ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 20.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 20.0, s35: None, s71: None });
         ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 40.0, s39: "Senior".into(), s40: None });
         let det = t14::f12();
         assert!(det.f13(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E9")));
@@ -179,7 +179,7 @@ mod tests {
     fn ghost_detector_verified_no_alert() {
         let mut ds = t3::default();
         ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s30: true, ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 40.0, s35: None, s71: None });
         ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 40.0, s39: "Senior".into(), s40: None });
         let det = t14::f12();
         let alerts = det.f13(&ds);
@@ -277,7 +277,7 @@ mod tests {
         let mut ds = t3::default();
         ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("Project Lead".to_string(), "X".to_string())].into_iter().collect(), ..Default::default() });
         ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s29: Some("Junior".into()), ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Project Lead".into(), s34: 40.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Project Lead".into(), s34: 40.0, s35: None, s71: None });
         let det = t13::f10(15.0);
         assert!(det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E5")));
     }
@@ -288,7 +288,7 @@ mod tests {
         let mut ds = t3::default();
         ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("Sr. Developer".to_string(), "X".to_string())].into_iter().collect(), ..Default::default() });
         ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s29: Some("Junior".into()), ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Sr. Developer".into(), s34: 40.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Sr. Developer".into(), s34: 40.0, s35: None, s71: None });
         let det = t13::f10(15.0);
         assert!(det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E5")));
     }
@@ -299,7 +299,7 @@ mod tests {
         let mut ds = t3::default();
         ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("ZZZ_Custom".to_string(), "X".to_string())].into_iter().collect(), ..Default::default() });
         ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s29: Some("ZZZ_Other".into()), ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "ZZZ_Custom".into(), s34: 40.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "ZZZ_Custom".into(), s34: 40.0, s35: None, s71: None });
         let det = t13::f10(15.0);
         assert!(!det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E5")));
     }
@@ -311,7 +311,7 @@ mod tests {
         // "logistics analyst" should match "Logistics Analyst" in contract
         let mut ds = t3::default();
         ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("Logistics Analyst".to_string(), "BA".to_string())].into_iter().collect(), ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "logistics analyst".into(), s34: 40.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "logistics analyst".into(), s34: 40.0, s35: None, s71: None });
         let det = t13::f10(15.0);
         // Should NOT fire E4 (variance) since category matches case-insensitively
         assert!(!det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E4")));
@@ -322,7 +322,7 @@ mod tests {
         // Previously this would fire E4 due to case-sensitive match. Now fixed.
         let mut ds = t3::default();
         ds.s7.insert("C1".into(), t6 { s22: "C1".into(), s25: [("Senior Developer".to_string(), "CS".to_string())].into_iter().collect(), ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "SENIOR DEVELOPER".into(), s34: 40.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "SENIOR DEVELOPER".into(), s34: 40.0, s35: None, s71: None });
         let det = t13::f10(15.0);
         assert!(!det.f11(&ds).iter().any(|a| format!("{:?}", a.s12).contains("E4")));
     }
@@ -335,7 +335,7 @@ mod tests {
         // don't exceed performed, but in aggregate do. Previously bypassed E9.
         let mut ds = t3::default();
         ds.s8.insert("E1".into(), t7 { s27: "E1".into(), s30: true, ..Default::default() });
-        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 100.0, s35: None });
+        ds.s9.push(t8 { s31: "C1".into(), s32: "E1".into(), s33: "Senior".into(), s34: 100.0, s35: None, s71: None });
         // Two billing records: 60 + 60 = 120 billed, but only 100 performed
         ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 60.0, s39: "Senior".into(), s40: None });
         ds.s10.push(t9 { s36: "C1".into(), s37: "E1".into(), s38: 60.0, s39: "Senior".into(), s40: None });

@@ -89,19 +89,36 @@ pub fn f19(alerts: &[t5]) -> t20 {
     t20 { s55: "FBI Case Opening - Factual Basis".to_string(), s56: crate::util::f20(), s57: factual_basis, s58: predicate_summary }
 }
 
+/// f27=fnv1a. FNV-1a 64-bit hash — deterministic across all platforms and Rust versions.
+/// Used for chain-of-custody audit hashes where reproducibility is a legal requirement.
+fn f27(data: &[&str]) -> String {
+    const FNV_OFFSET: u64 = 14695981039346656037;
+    const FNV_PRIME: u64 = 1099511628211;
+    let mut hash = FNV_OFFSET;
+    for s in data {
+        for &byte in s.as_bytes() {
+            hash ^= byte as u64;
+            hash = hash.wrapping_mul(FNV_PRIME);
+        }
+        // Separator byte so ("ab","c") != ("a","bc")
+        hash ^= 0x1e;
+        hash = hash.wrapping_mul(FNV_PRIME);
+    }
+    format!("{hash:016x}")
+}
+
 /// f18=referral_package
 pub fn f18(alerts: &[t5]) -> t17 {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-
     let generated_at = crate::util::f20();
     let audit_entries: Vec<t19> = alerts.iter().enumerate().map(|(i, a)| {
-        let mut hasher = DefaultHasher::new();
-        a.s16.hash(&mut hasher);
-        a.s17.hash(&mut hasher);
-        a.s15.hash(&mut hasher);
-        format!("{:?}", a.s12).hash(&mut hasher);
-        t19 { s52: format!("{:?}", a.s12), s53: i, s54: format!("{:x}", hasher.finish()) }
+        let rule = format!("{:?}", a.s12);
+        let hash = f27(&[
+            rule.as_str(),
+            a.s16.as_deref().unwrap_or(""),
+            a.s17.as_deref().unwrap_or(""),
+            a.s15.as_str(),
+        ]);
+        t19 { s52: rule, s53: i, s54: hash }
     }).collect();
 
     t17 {
@@ -178,5 +195,77 @@ mod tests {
     fn referral_package_json_serializable() {
         let j = serde_json::to_string(&f18(&[sample_alert()])).unwrap();
         assert!(j.contains("DoD"));
+    }
+
+    // --- FNV-1a chain-of-custody hash tests ---
+
+    #[test]
+    fn fnv1a_deterministic_same_inputs_same_hash() {
+        let h1 = f27(&["E5", "C1", "E1", "some summary"]);
+        let h2 = f27(&["E5", "C1", "E1", "some summary"]);
+        assert_eq!(h1, h2);
+    }
+
+    #[test]
+    fn fnv1a_different_inputs_different_hash() {
+        let h1 = f27(&["E5", "C1", "E1", "summary A"]);
+        let h2 = f27(&["E5", "C1", "E1", "summary B"]);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn fnv1a_different_rule_different_hash() {
+        let h1 = f27(&["E4", "C1", "E1", "x"]);
+        let h2 = f27(&["E7", "C1", "E1", "x"]);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn fnv1a_separator_prevents_collision() {
+        // ("ab","c") must differ from ("a","bc")
+        let h1 = f27(&["ab", "c"]);
+        let h2 = f27(&["a", "bc"]);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn fnv1a_output_is_16_hex_chars() {
+        let h = f27(&["E5", "C1", "E1", "test"]);
+        assert_eq!(h.len(), 16);
+        assert!(h.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn fnv1a_known_value() {
+        // FNV-1a of empty input: offset basis unchanged
+        let h = f27(&[]);
+        assert_eq!(h, "cbf29ce484222325"); // FNV offset basis
+    }
+
+    #[test]
+    fn referral_package_audit_hash_is_deterministic() {
+        // Same alert → same hash on every call (not timestamp-dependent)
+        let a = sample_alert();
+        let pkg1 = f18(&[a.clone()]);
+        let pkg2 = f18(&[a]);
+        assert_eq!(pkg1.s48[0].s54, pkg2.s48[0].s54);
+    }
+
+    #[test]
+    fn referral_package_audit_hash_changes_with_different_alert() {
+        let mut a2 = sample_alert();
+        a2.s15 = "different summary".into();
+        let pkg1 = f18(&[sample_alert()]);
+        let pkg2 = f18(&[a2]);
+        assert_ne!(pkg1.s48[0].s54, pkg2.s48[0].s54);
+    }
+
+    #[test]
+    fn referral_package_audit_hash_changes_with_different_contract() {
+        let mut a2 = sample_alert();
+        a2.s16 = Some("C2".into());
+        let pkg1 = f18(&[sample_alert()]);
+        let pkg2 = f18(&[a2]);
+        assert_ne!(pkg1.s48[0].s54, pkg2.s48[0].s54);
     }
 }

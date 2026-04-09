@@ -72,6 +72,7 @@ fn f49() -> bool {
         s11: FraudType::E2, s12: RuleId::E4, s13: 5, s14: 85,
         s15: "test".to_string(), s16: Some("C1".to_string()), s17: Some("E1".to_string()),
         s18: None, s19: None, s20: None, s21: Some("2026-01-01T00:00:00Z".to_string()),
+        s66: None,
     };
     let json = serde_json::to_string(&alert).unwrap();
     assert!(json.contains("labor_category"));

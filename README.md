@@ -8,7 +8,7 @@ Proactive detection of **Labor Category Fraud** and **Ghost Billing** for DoD IG
 
 Per DoDI 5505.02/03, DoD OIG Fraud Scenarios, and Attorney General Guidelines.
 
-Single binary. 6 dependencies. 621 KB. 8 detection rules. 67 unit tests. Zero external services.
+Single binary. 6 dependencies. 637 KB. 10 detection rules. 111 unit tests + 14 e2e tests. Zero external services.
 
 ---
 
@@ -22,10 +22,14 @@ flowchart LR
     Run --> GD[GhostDetector]
     Run --> TD[TimeDetector]
     Run --> DD[DuplicateDetector]
+    Run --> SD[SubcontractorDetector]
+    Run --> RE[RateEscalationDetector]
     LD --> Alerts[Alerts]
     GD --> Alerts
     TD --> Alerts
     DD --> Alerts
+    SD --> Alerts
+    RE --> Alerts
     Alerts --> Export[export-referral]
     Alerts --> FBI[FBI case-opening]
 ```
@@ -36,7 +40,7 @@ flowchart LR
 
 | Target | Arch | Status | Size |
 |--------|------|--------|------|
-| macOS ARM | aarch64-apple-darwin | Release binary | 621 KB |
+| macOS ARM | aarch64-apple-darwin | Release binary | 637 KB |
 | macOS Intel | x86_64-apple-darwin | Release binary | 671 KB |
 | Linux x86_64 | x86_64-unknown-linux-gnu | Release binary | 764 KB |
 | Android | aarch64-linux-android | AAB (JNI + WebView) | 213 KB |
@@ -71,10 +75,10 @@ cargo run --release -- --data-path fixtures export-referral --fbi
 # Print SPDX SBOM
 cargo run --release -- --sbom
 
-# Run unit tests (67 tests)
+# Run unit tests (111 tests)
 cargo test
 
-# Run integration tests (f49-f60)
+# Run integration tests (f49-f62, 14 cases)
 cargo run --bin whyyoulying-test --features tests
 ```
 
@@ -99,6 +103,7 @@ cargo run --bin whyyoulying-test --features tests
 | `--config PATH` | Config file (labor_variance_threshold_pct, min_confidence) |
 | `--threshold PCT` | Labor variance threshold 0-100 (default 15) |
 | `--min-confidence 0-100` | Filter alerts below confidence (S4 false-positive control) |
+| `--min-loss N` | Filter alerts below estimated loss (USD) |
 | `--agency AGENCY` | DoD nexus: filter by agency (e.g. DoD, Army) |
 | `--cage-code CODE` | DoD nexus: filter by CAGE code |
 | `--output json\|csv` | Output format |
@@ -114,11 +119,11 @@ cargo run --bin whyyoulying-test --features tests
 
 ## Data Format
 
-Place JSON files in `--data-path`:
+Place JSON or CSV files in `--data-path` (JSON preferred; CSV ingest is hand-rolled, no extra deps):
 
 - `contracts.json` — id, cage_code, agency, labor_cats, labor_rates
-- `employees.json` — id, quals, labor_cat_min, verified
-- `labor_charges.json` — contract_id, employee_id, labor_cat, hours, rate
+- `employees.json` — id, quals, labor_cat_min, verified, is_subcontractor
+- `labor_charges.json` — contract_id, employee_id, labor_cat, hours, rate, period
 - `billing_records.json` — contract_id, employee_id, billed_hours, billed_cat, period
 
 See `fixtures/` for examples.
@@ -127,16 +132,22 @@ See `fixtures/` for examples.
 
 ## Detection Rules
 
-| Rule | Type | Description |
-|------|------|-------------|
-| LABOR_VARIANCE | Labor | Labor category not in contract |
-| LABOR_QUAL_BELOW | Labor | Employee charged above qualification |
-| LABOR_RATE_OVERBILL | Labor | Charged rate exceeds contract rate by > threshold |
-| GHOST_NO_EMPLOYEE | Ghost | Billed employee not in roster |
-| GHOST_NOT_VERIFIED | Ghost | No floorcheck verification |
-| GHOST_BILLED_NOT_PERFORMED | Ghost | Billed hours exceed performed |
-| TIME_OVERCHARGE | Ghost | Employee total billed hours exceed max per period |
-| DUPLICATE_BILLING | Labor | Same employee billed on 2+ contracts in same period |
+The first 8 rules implement DoDI 5505.02 Enclosure 3 fraud indicators. Rules 9-10 extend to subcontractor and rate-trend fraud per DCAA Contract Audit Manual guidance.
+
+| # | Rule ID (E#) | Type | Description | DoDI 5505.02 |
+|---|--------------|------|-------------|--------------|
+| 1 | LABOR_VARIANCE (E4) | Labor | Labor category billed not in contract | Encl 3 §1 |
+| 2 | LABOR_QUAL_BELOW (E5) | Labor | Employee charged above their qualification | Encl 3 §1 |
+| 3 | LABOR_RATE_OVERBILL (E6) | Labor | Charged rate exceeds contract rate by > threshold | Encl 3 §1 |
+| 4 | GHOST_NO_EMPLOYEE (E7) | Ghost | Billed employee not in roster | Encl 3 §2 |
+| 5 | GHOST_NOT_VERIFIED (E8) | Ghost | Billed employee has no floorcheck verification | Encl 3 §2 |
+| 6 | GHOST_BILLED_NOT_PERFORMED (E9) | Ghost | Billed hours exceed performed (split-billing aware) | Encl 3 §2 |
+| 7 | TIME_OVERCHARGE (E10) | Ghost | Employee total billed hours exceed max per period | Encl 3 §2 |
+| 8 | DUPLICATE_BILLING (E11) | Labor | Same employee billed on 2+ contracts in same period | Encl 3 §1 |
+| 9 | SUB_BILLED_AS_PRIME (E16) | Subcontractor | Subcontractor billed at prime contractor rates | DCAM 6-414 |
+| 10 | RATE_ESCALATION_TREND (E17) | Trend | Rate creep across consecutive billing periods | DCAM 6-606 |
+
+See [PROOF_OF_ARTIFACTS](PROOF_OF_ARTIFACTS.md) for example outputs of all 8 DoDI rules.
 
 ---
 
@@ -144,15 +155,17 @@ See `fixtures/` for examples.
 
 | Metric | Value |
 |--------|-------|
-| Lines of Rust | 2,603 |
-| Source files | 16 |
-| Detection rules | 8 |
-| Unit tests | 67 |
-| Integration tests | 12 (f49-f60) |
+| Lines of Rust | 3,468 |
+| Source files | 18 |
+| Detection rules | 10 |
+| Unit tests | 111 |
+| Integration tests | 14 (f49-f62) |
 | Direct dependencies | 6 (anyhow, clap, serde, serde_json, tempfile, thiserror) |
-| Release binary (macOS ARM) | 621 KB |
+| Release binary (macOS ARM) | 637 KB |
+| Rust edition | 2024 |
 
 All public symbols are P13 compressed per [compression_map](docs/compression_map.md).
+Chain-of-custody hashing uses FNV-1a for cross-platform reproducibility (legal defensibility).
 
 ---
 

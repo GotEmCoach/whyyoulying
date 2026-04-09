@@ -122,3 +122,9 @@ Chronological record of every commit. Dates and hashes from git log.
 | Hash | Description |
 |------|-------------|
 | (this) | P23 Tiny AI Opportunities: 7 sub-100K param models (95K total, ~32 KB quantized). Labor cat normalizer, confidence calibrator, materiality estimator, period anomaly detector, entity resolution, predicate act router, narrative generator |
+
+## 2026-04-09
+
+| Hash | Description |
+|------|-------------|
+| 93b9153 | Polish docs + fix build for edition 2024. README/CLAUDE.md/PROOF_OF_ARTIFACTS rewritten — 10 rules (8 DoDI + 2 DCAM), 111 unit + 14 e2e tests (was 79), 3,468 LOC, 18 src files, 637 KB binary, edition 2024. PROOF_OF_ARTIFACTS rewritten as a federal-targeted document: each of the 8 DoDI 5505.02 rules now has statute citation, predicate acts, how-it-fires scenario, and live JSON output captured from the binary. CLAUDE.md replaces 4-line stub with full module map, rule table, conventions, and don'ts. Build fix: 16 t8 literals in detect/mod.rs were missing s71 (added by rate-escalation but never propagated), tests.rs:71 Alert literal was missing s66 (added by estimated_loss but never propagated), rate_escalation.rs:31 had an edition-2024-incompatible explicit ref binding. Verified: cargo test 111/111, whyyoulying-test 14/14, TRIPLE SIMS 3/3 |

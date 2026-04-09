@@ -1,7 +1,7 @@
 # Proof of Artifacts — whyyoulying
 
 Verifiable metrics from the current build, and example outputs for the 8 DoDI 5505.02 fraud rules.
-Updated 2026-04-07.
+Updated 2026-04-09.
 
 ---
 
@@ -232,6 +232,18 @@ All fields are stable across builds; the `timestamp` field is wall-clock at run 
 | `whyyoulying-test` (e2e) | 14 (f49-f62) | All pass | `cargo run --bin whyyoulying-test --features tests` |
 | TRIPLE SIMS | 3/3 | All pass | (embedded in e2e binary) |
 | **Total** | **125** | **0 failures** | |
+
+### Polish pass — 2026-04-09 (commit `93b9153`)
+
+| Check | Result |
+|-------|--------|
+| Documentation rewrite | README, CLAUDE.md, PROOF_OF_ARTIFACTS — 10 rules, accurate metrics |
+| 8 DoDI 5505.02 rules — live JSON examples | All 8 captured from running binary, included in §1 |
+| Build state pre-pass | **Broken** — `cargo test` did not compile |
+| Root cause | 16 `t8` literals in `src/detect/mod.rs` missing `s71` (added by rate-escalation commit but never propagated to existing tests); `src/tests.rs:71` `Alert` literal missing `s66` (added by estimated_loss commit but never propagated to e2e harness); `src/detect/rate_escalation.rs:31` used an explicit `ref` binding incompatible with edition 2024 |
+| Build state post-pass | `cargo test` 111/111, `whyyoulying-test` 14/14, TRIPLE SIMS 3/3 |
+| Edition | Bumped 2021 → 2024 (already in working tree, now actually compiling) |
+| Verdict | PASS |
 
 E2E case map:
 

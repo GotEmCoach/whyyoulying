@@ -1,0 +1,4 @@
+# P27 Diamond Rust Binary Architecture — binary size baseline
+# profile=diamond (speed-Diamond, opt-level=3, lto=fat)
+# date: 2026-04-19
+865760
